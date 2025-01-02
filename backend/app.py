@@ -6,18 +6,11 @@ import os
 app = Flask(__name__) # <--- FOR DEPLOYMENT!!!
 
 # FOR DEPLOYMENT!!! -- Allow specific frontend origin (Netlify) 
-CORS(app, resources={r"/api/*": {"origins": ["https://resilient-blancmange-19745d.netlify.app"]}})
+CORS(app, resources={r"/api/*": {"origins": ["https://rsmth-demo.netlify.app"]}})
 
 
 HF_API_URL = 'https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill'
 HF_API_TOKEN = os.getenv('HF_API_TOKEN')  # Key to be picked up with environment variables
-
-# HF_API_TOKEN = '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'
-
-
-@app.route('/')
-def index():
-    return render_template('customer.html')
 
 
 @app.route('/api/chat', methods=['POST'])

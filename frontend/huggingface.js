@@ -2,7 +2,7 @@
   window.getLLMResponse = async function(userMessage) {
       try {
           // Send user message to the backend proxy instead of Hugging Face directly
-          const response = await fetch('http://localhost:5000/api/chat', {
+          const response = await fetch('https://rsmth-test-bot.onrender.com/api/chat', {
               method: 'POST',
               headers: {
                   'Content-Type': 'application/json'
