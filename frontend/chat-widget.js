@@ -39,7 +39,7 @@
         position: fixed;
         bottom: 80px;
         right: 20px;
-        width: 426px;
+        width: 375px;
         min-width: 350px;
         max-height: 700px;
         min-height: 400px;
