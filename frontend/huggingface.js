@@ -3,13 +3,14 @@
     try {
       // Send user message to the backend proxy
       const response = await fetch(
-        "https://rsmth-test-bot.onrender.com/query", // Use the correct endpoint
+        "https://pdf-qa-bot-o1bn.onrender.com/query", // Use the correct endpoint
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            accept: "application/json",
           },
-          body: JSON.stringify({ user_query: userMessage }), // Ensure the key matches the backend
+          body: JSON.stringify(userMessage), // Directly send the user message as shown in the sample
         }
       );
 
