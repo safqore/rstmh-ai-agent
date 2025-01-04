@@ -1,5 +1,6 @@
 import os
 from fastapi import FastAPI, HTTPException, File, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import PyPDF2
 import faiss
@@ -9,6 +10,20 @@ from sentence_transformers import SentenceTransformer
 from huggingface_hub import InferenceClient
 
 app = FastAPI()
+
+# CORS Configuration
+origins = [
+    "http://localhost:3000",  # For local development
+    "https://rsmth-demo.netlify.app"  # Your frontend on Netlify
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # List of allowed origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
+)
 
 # Initialize Hugging Face Inference API client
 hf_api_key = os.getenv('HF_API_TOKEN')  # Replace with your Hugging Face API key
