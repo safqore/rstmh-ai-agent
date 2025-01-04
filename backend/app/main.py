@@ -92,10 +92,10 @@ async def upload_pdf(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
-
-@app.get("/query/")
-async def query_pdf(user_query: str):
+@app.post("/query/")
+async def query_pdf(query: QueryRequest):
+    user_query = query.user_query  # Extract the user query from the request body
+   
     try:
         if not user_query.strip():
             raise HTTPException(status_code=400, detail="Query cannot be empty")
