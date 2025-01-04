@@ -100,6 +100,10 @@ async def query_pdf(query: QueryRequest):
         if not user_query.strip():
             raise HTTPException(status_code=400, detail="Query cannot be empty")
 
+        # Check if the FAISS index is empty
+        if index.ntotal == 0:
+            raise HTTPException(status_code=400, detail="Knowledge base is empty. Upload a PDF first.")
+
         # Convert the query into a vector
         query_vector = embedder.encode([user_query])[0]
 
@@ -108,9 +112,16 @@ async def query_pdf(query: QueryRequest):
         k = 5  # Number of closest neighbors to retrieve
         distances, indices = index.search(query_vector, k)
 
+        # Ensure indices[0] is not empty or invalid
+        if len(indices[0]) == 0 or all(idx == -1 for idx in indices[0]):
+            raise HTTPException(status_code=404, detail="No relevant chunks found for the query.")
+
         # Gather the most relevant chunks
         unique_indices = set(indices[0])
         relevant_chunks = [chunk_texts[idx] for idx in unique_indices if idx < len(chunk_texts)]
+
+        if not relevant_chunks:
+            raise HTTPException(status_code=404, detail="No relevant chunks found in the knowledge base.")
 
         # Combine relevant chunks into a single context
         context = " ".join(relevant_chunks)
@@ -138,10 +149,13 @@ async def query_pdf(query: QueryRequest):
             "relevant_chunks": relevant_chunks,
         }
 
+    except HTTPException as http_err:
+        # Re-raise HTTPExceptions to preserve the original status code and detail
+        raise http_err
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
+        # Catch all other exceptions and return a generic error
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
     
 @app.post("/clear/")
 async def clear_knowledge_base():
