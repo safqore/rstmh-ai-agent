@@ -10,7 +10,7 @@
             "Content-Type": "application/json",
             accept: "application/json",
           },
-          body: JSON.stringify(userMessage), // Directly send the user message as shown in the sample
+          body: JSON.stringify({ user_query: userMessage }), // Directly send the user message as shown in the sample
         }
       );
 
