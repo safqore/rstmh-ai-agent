@@ -1,174 +1,182 @@
-import os
-from fastapi import FastAPI, HTTPException, File, UploadFile
-from fastapi.middleware.cors import CORSMiddleware
+from http.client import HTTPException
+from flask import Flask, request, jsonify, render_template
+from flask_cors import CORS
 from pydantic import BaseModel
-import PyPDF2
-import faiss
-import numpy as np
-from langchain.text_splitter import CharacterTextSplitter
+import requests
+from qdrant_client import QdrantClient
 from sentence_transformers import SentenceTransformer
-from huggingface_hub import InferenceClient
+import os
+import re
 
-app = FastAPI()
+app = Flask(__name__) # <--- FOR DEPLOYMENT!!!
 
-# CORS Configuration
-origins = [
-    "http://localhost:3000",  # For local development
-    "https://rsmth-demo.netlify.app"  # Your frontend on Netlify
-]
+# FOR DEPLOYMENT!!! -- Allow specific frontend origin (Netlify) 
+CORS(app, resources={r"/api/*": {"origins": ["https://rsmth-demo.netlify.app"]}})
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,  # List of allowed origins
-    allow_credentials=True,
-    allow_methods=["*"],  # Allow all HTTP methods
-    allow_headers=["*"],  # Allow all headers
-)
 
-# Initialize Hugging Face Inference API client
-hf_api_key = os.getenv('HF_API_TOKEN')  # Replace with your Hugging Face API key
-hf_model_name = "Qwen/QwQ-32B-Preview"  # Replace with the desired Hugging Face model
-hf_client = InferenceClient(model=hf_model_name, token=hf_api_key)
+HF_API_URL = 'https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill'
+HF_API_TOKEN = os.getenv('HF_API_TOKEN')  # Key to be picked up with environment variables
 
-# Load the pre-trained SentenceTransformer model
-embedder = SentenceTransformer("all-MiniLM-L6-v2")
+QDRANT_URL = "https://1c680bc9-2d9a-4b74-9ac9-8b537f9e1557.us-east4-0.gcp.cloud.qdrant.io"
+QD_API_KEY = os.getenv('QD_API_TOKEN')
+client = QdrantClient(QDRANT_URL, api_key=QD_API_KEY)
+COLLECTION_NAME = "pdf_vectors"
 
-# Initialize FAISS index
-dimension = 384
-index = faiss.IndexFlatL2(dimension)  # L2 distance index (Euclidean distance)
 
-# Store the chunks and corresponding metadata
-chunk_texts = []
+# Embedding Model
+embedder = SentenceTransformer('all-MiniLM-L6-v2')
 
 # Define Pydantic model for query requests
 class QueryRequest(BaseModel):
     user_query: str  # Changed `query` to `user_query` for consistency
 
-
-@app.post("/read-pdf/")
-async def upload_pdf(file: UploadFile = File(...)):
+@app.post("/query")
+def query_pdf():
     try:
-        if not file.filename.lower().endswith('.pdf'):
-            raise HTTPException(status_code=400, detail="The file must be a PDF")
+        print("Received request on /query endpoint.")
 
-        pdf_reader = PyPDF2.PdfReader(file.file)
-        text = ""  # Initialize the text variable
-        for page in pdf_reader.pages:
-            page_text = page.extract_text()
-            if page_text:
-                text += page_text  # Append extracted text
+        # Extract user_query directly from the request body (JSON)
+        data = request.json
+        print(f"Incoming JSON Payload: {data}")
 
-        if not text.strip():  # Ensure text is not empty
-            raise HTTPException(status_code=400, detail="No text found in the PDF")
+        if not data or 'user_query' not in data:
+            print("Missing or invalid JSON payload.")
+            return jsonify({"error": "Invalid or missing JSON payload."}), 400
 
-        # Split text into chunks
-        text_splitter = CharacterTextSplitter(separator="\n", chunk_size=500, chunk_overlap=50)
-        chunks = text_splitter.split_text(text)
+        user_query = data.get('user_query')
+        print(f"User query: {user_query}")
 
-        # Remove duplicate chunks
-        unique_chunks = list(set(chunks))  # Deduplicate chunks
+        if not user_query:
+            print("Query is empty.")
+            return jsonify({"error": "Query cannot be empty"}), 400
 
-        # Turn unique chunks into vectors
-        chunk_vectors = embedder.encode(unique_chunks)
+        # Generate embedding (vector) for the user query
+        print("Generating embeddings for user query.")
+        query_vector = embedder.encode([user_query])[0].tolist()
+        print(f"Generated embedding vector (first 10 values): {query_vector[:10]}...")
 
-        # Store the vectors in the FAISS index
-        faiss_index = np.array(chunk_vectors, dtype=np.float32)
-        index.add(faiss_index)
+        # Search Qdrant for the top 10 matching chunks
+        print("Querying Qdrant for matching vectors.")
+        search_result = client.search(
+            collection_name=COLLECTION_NAME,
+            query_vector=query_vector,
+            limit=10  # Retrieve top 10 most relevant chunks
+        )
 
-        # Store unique chunks in memory for querying
-        global chunk_texts
-        chunk_texts.extend(unique_chunks)
+        # Log Qdrant search response
+        # print(f"Qdrant search result: {search_result}")
 
-        # Check FAISS index status
-        faiss_index_count = index.ntotal
+        # Extract and combine relevant text from the search results
+        relevant_chunks = [result.payload['text'] for result in search_result if 'text' in result.payload]
+        # print(f"Retrieved {len(relevant_chunks)} chunks from Qdrant.")
 
-        return {
-            "message": "PDF uploaded and processed successfully!",
-            "num_chunks": len(unique_chunks),
-            "faiss_index_count": faiss_index_count,
-            "chunks": unique_chunks[:5],  # First 5 unique chunks as preview
-        }
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/query/")
-async def query_pdf(query: QueryRequest):
-    user_query = query.user_query  # Extract the user query from the request body
-   
-    try:
-        if not user_query.strip():
-            raise HTTPException(status_code=400, detail="Query cannot be empty")
-
-        # Check if the FAISS index is empty
-        if index.ntotal == 0:
-            raise HTTPException(status_code=400, detail="Knowledge base is empty. Upload a PDF first.")
-
-        # Convert the query into a vector
-        query_vector = embedder.encode([user_query])[0]
-
-        # Perform a similarity search in FAISS
-        query_vector = np.array([query_vector], dtype=np.float32)
-        k = 5  # Number of closest neighbors to retrieve
-        distances, indices = index.search(query_vector, k)
-
-        # Ensure indices[0] is not empty or invalid
-        if len(indices[0]) == 0 or all(idx == -1 for idx in indices[0]):
-            raise HTTPException(status_code=404, detail="No relevant chunks found for the query.")
-
-        # Gather the most relevant chunks
-        unique_indices = set(indices[0])
-        relevant_chunks = [chunk_texts[idx] for idx in unique_indices if idx < len(chunk_texts)]
-
+        # If no chunks are found, return an error
         if not relevant_chunks:
-            raise HTTPException(status_code=404, detail="No relevant chunks found in the knowledge base.")
+            print("No relevant chunks found in Qdrant.")
+            return jsonify({"error": "No relevant information found."}), 404
 
-        # Combine relevant chunks into a single context
+        # Combine the chunks into a single context for the LLM
         context = " ".join(relevant_chunks)
+        # print(f"Context prepared for LLM ---> (first 200 chars): {context[:200]}...")
 
-        # Use Hugging Face Inference API to generate an answer
+        # Truncate context if it's too long (to avoid exceeding API limits)
+        # MAX_CONTEXT_LENGTH = 1000
+        # if len(context) > MAX_CONTEXT_LENGTH:
+        #     print(f"Context too long ({len(context)} chars), truncating...")
+        #    context = context[:MAX_CONTEXT_LENGTH]
+
+        # Prepare the LLM prompt with context
         prompt = (
-            f"Context: {context}\n\n"
-            f"Please answer the following question based on the context provided:\n"
+            f"You are an expert assistant. Answer the following question based on the provided context.\n\n"
+            f"Context:\n{context}\n\n"
+            f"Ignore any external knowledge and focus solely on the context above.\n"
             f"Question: {user_query}\n"
             f"Answer:"
         )
-        hf_response = hf_client.text_generation(
-            prompt, max_new_tokens=500, temperature=0.5, top_p=0.9
-        )
+        print("Sending prompt to LLM.")
 
-        # Process response to keep only the first answer
-        if "Answer:" in hf_response:
-            answer = hf_response.split("Answer:")[1].split("Question:")[0].strip()
-        else:
-            answer = hf_response.strip()
-
-        return {
-            "query": user_query,
-            "answer": answer,
-            "relevant_chunks": relevant_chunks,
+        # Call Hugging Face LLM API with the combined context
+        headers = {
+            "Authorization": f"Bearer {HF_API_TOKEN}",
+            "Content-Type": "application/json"
         }
 
-    except HTTPException as http_err:
-        # Re-raise HTTPExceptions to preserve the original status code and detail
-        raise http_err
+        payload = {
+            "inputs": prompt,
+            "parameters": {
+                "max_new_tokens": 1000  # Adjust this to a larger number if necessary
+            },
+            "options": {"wait_for_model": True}
+        }
+        
+        print(f"Payload sent to LLM: {payload}")
+
+        response = requests.post(HF_API_URL, headers=headers, json=payload)
+        response.raise_for_status()
+        print("Received successful response from Hugging Face API.")
+
+        data = response.json()
+        print(f"Raw LLM response ----> : {data}")
+
+        # Handle different response structures
+        if isinstance(data, list) and data:
+            llm_reply = data[0].get('generated_text', 'No response.')
+        elif isinstance(data, dict):
+            llm_reply = data.get('generated_text', 'No response.')
+        else:
+            llm_reply = "No response received from LLM."
+
+        # Extract the actual answer from the response
+        if "Answer:" in llm_reply:
+            llm_reply = llm_reply.split("Answer:")[-1].strip()
+
+        return jsonify({
+            "query": user_query,
+            "answer": llm_reply
+            # "context": relevant_chunks
+        })
+
+    except requests.exceptions.RequestException as e:
+        print(f"Request to LLM API failed: {str(e)}")
+        return jsonify({"error": f"LLM request failed: {str(e)}"}), 500
 
     except Exception as e:
-        # Catch all other exceptions and return a generic error
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
-    
-@app.post("/clear/")
-async def clear_knowledge_base():
-    """
-    Clears the FAISS index, chunks, and associated data.
-    """
-    global index, chunk_texts
+        print("Internal server error occurred.")
+        print(str(e))
+        return jsonify({"error": f"Internal server error: {str(e)}"}), 500
 
-    # Reinitialize the FAISS index
-    dimension = 384
-    index = faiss.IndexFlatL2(dimension)  # Reset to an empty FAISS index
 
-    # Clear the chunks
-    chunk_texts = []
+@app.route('/api/chat', methods=['POST'])
+def chat():
+    user_message = request.json.get('message')
 
-    return {"message": "Knowledge base cleared successfully!"}
+    if not user_message:
+        return jsonify({"reply": "Message is required."}), 400
+
+    payload = {
+        "inputs": user_message,
+        "options": {"wait_for_model": True}
+    }
+
+    headers = {
+        "Authorization": f"Bearer {HF_API_TOKEN}",
+        "Content-Type": "application/json"
+    }
+
+    try:
+        response = requests.post(HF_API_URL, headers=headers, json=payload)
+        response.raise_for_status()
+
+        data = response.json()
+        print("API Response: ", data)  # Debugging line
+        reply = data[0].get('generated_text', 'No response.')
+        return jsonify({"reply": reply.strip()})
+
+    except requests.exceptions.RequestException as e:
+        print(f"Error contacting Hugging Face API: {e}")
+        return jsonify({"reply": "An error occurred while fetching the response."}), 500
+
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))  # Use PORT from environment or default to 5000
+    app.run(host='0.0.0.0', port=port)
