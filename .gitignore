@@ -65,3 +65,9 @@ Thumbs.db
 
 # OS-specific
 Desktop.ini
+
+# pdfs
+*.pdf
+
+# txt files
+*.txt

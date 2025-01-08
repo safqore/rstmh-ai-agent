@@ -247,6 +247,18 @@
   `;
   document.body.appendChild(wrapper);
 
+  function formatLLMResponse(text) {
+    // Replace newlines with line breaks and detect bullet points
+    return text
+        .replace(/\n\s*-\s/g, '<li>')            // Convert - to <li>
+        .replace(/\n\n/g, '</li><br>')           // Double new line ends list item
+        .replace(/\n/g, '<br>')                  // Single newline for line breaks
+        .replace(/<\/li><br>/g, '</li>')         // Clean unnecessary <br> after </li>
+        .replace(/^Answer:/, '<strong>Answer:</strong><br>')  // Bold the answer prefix
+        .replace(/^/, '<ul>')                    // Start unordered list
+        .replace(/$/, '</ul>');                  // End unordered list
+  }
+
   const chatBubble = wrapper.querySelector('#chat-bubble');
   const chatWindow = wrapper.querySelector('#chat-window');
   const closeChat = wrapper.querySelector('#close-chat');
@@ -283,7 +295,7 @@
     // Display bot response
     const botMsgElem = document.createElement('div');
     botMsgElem.className = 'chat-message bot';
-    botMsgElem.innerHTML = `<span>${botReply}</span>`;
+    botMsgElem.innerHTML = `<span>${formatLLMResponse(botReply)}</span>`;
     chatBody.appendChild(botMsgElem);
     chatBody.scrollTop = chatBody.scrollHeight;
   }
