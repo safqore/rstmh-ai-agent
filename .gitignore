@@ -71,3 +71,7 @@ Desktop.ini
 
 # txt files
 *.txt
+.devcontainer/devcontainer.json
+docker-compose.yml
+Dockerfile
+environment.yml
