@@ -5,20 +5,24 @@ from pydantic import BaseModel
 import requests
 from qdrant_client import QdrantClient
 from sentence_transformers import SentenceTransformer
+from supabase_logging import log_interaction
 import os
 import re
+import uuid
+from dotenv import load_dotenv
 
 
 app = Flask(__name__, static_folder='../frontend', template_folder='../frontend')
 CORS(app, supports_credentials=True, resources={r"/*": {"origins": "*"}})  # Enable CORS for all routes
 
-HF_API_URL = 'https://api-inference.huggingface.co/models/Qwen/QwQ-32B-Preview'
+load_dotenv()
+HF_API_URL = os.getenv('HF_API_URL')
 # HF_API_TOKEN = os.getenv('HF_API_TOKEN')  # Key to be picked up with environment variables
 HF_API_TOKEN = os.getenv('HF_API_TOKEN')
 
 
 # Qdrant Client Setup (Replace with your actual endpoint and key)
-QDRANT_URL = "https://1c680bc9-2d9a-4b74-9ac9-8b537f9e1557.us-east4-0.gcp.cloud.qdrant.io"
+QDRANT_URL = os.getenv('QDRANT_URL')
 API_KEY = os.getenv('QD_API_TOKEN')
 COLLECTION_NAME = "pdf_vectors"
 client = QdrantClient(QDRANT_URL, api_key=API_KEY)
@@ -145,16 +149,31 @@ def query_pdf():
         else:
             llm_reply = "No response received from LLM."
 
+        llm_reply = data[0].get('generated_text', 'No response.')
+
         # Extract the actual answer from the response
         if "Answer:" in llm_reply:
             llm_reply = llm_reply.split("Answer:")[-1].strip()
 
         print(f"LLM Reply-------> : {llm_reply}")
+        # Generate user and session IDs for logging (replace with actual logic)
+        user_id = request.headers.get("X-User-ID", str(uuid.uuid4()))  # Use header if available, else generate UUID
+        session_id = request.headers.get("X-Session-ID", str(uuid.uuid4()))
+
+        # Log interaction
+        log_interaction(
+            user_id=user_id,
+            session_id=session_id,
+            prompt=user_query,
+            response=llm_reply,
+            source_pdf="charity_guidelines.pdf",  # Update with actual PDF source
+            metadata={"ip": request.remote_addr, "user_agent": request.headers.get("User-Agent")}
+        )
 
         return jsonify({
             "query": user_query,
-            "answer": llm_reply
-            # "context": relevant_chunks
+            "answer": llm_reply,
+            "context": relevant_chunks
         })
 
     except requests.exceptions.RequestException as e:
@@ -165,7 +184,6 @@ def query_pdf():
         print("Internal server error occurred.")
         print(str(e))
         return jsonify({"error": f"Internal server error: {str(e)}"}), 500
-
 
 
 @app.route('/test_qdrant', methods=['POST'])
