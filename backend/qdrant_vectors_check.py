@@ -2,7 +2,7 @@ from qdrant_client import QdrantClient
 import os
 
 # Qdrant Cloud setup
-QDRANT_URL = "https://1c680bc9-2d9a-4b74-9ac9-8b537f9e1557.us-east4-0.gcp.cloud.qdrant.io"
+QDRANT_URL = os.getenv('QDRANT_URL')
 API_KEY = os.getenv('QD_API_TOKEN')
 
 client = QdrantClient(QDRANT_URL, api_key=API_KEY)
@@ -28,6 +28,5 @@ for collection in collections.collections:
     # Print the total number of vectors (points)
     print(f"[INFO] Collection '{collection.name}' has {collection_info.points_count} vectors (chunks).")
 
-
-
-
+# Explicitly close the client
+client.close()
