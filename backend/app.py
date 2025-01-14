@@ -10,22 +10,23 @@ import os
 import re
 import uuid
 from dotenv import load_dotenv
-
+from openai import OpenAI
 
 app = Flask(__name__, static_folder='../frontend', template_folder='../frontend')
 CORS(app, supports_credentials=True, resources={r"/*": {"origins": "*"}})  # Enable CORS for all routes
 
 load_dotenv()
-HF_API_URL = os.getenv('HF_API_URL')
-# HF_API_TOKEN = os.getenv('HF_API_TOKEN')  # Key to be picked up with environment variables
-HF_API_TOKEN = os.getenv('HF_API_TOKEN')
 
+# Set the OpenAI API key
+openai_client = OpenAI(
+    api_key=os.environ.get("OPENAI_API_KEY"),
+)
 
 # Qdrant Client Setup (Replace with your actual endpoint and key)
 QDRANT_URL = os.getenv('QDRANT_URL')
 API_KEY = os.getenv('QD_API_TOKEN')
 COLLECTION_NAME = "pdf_vectors"
-client = QdrantClient(QDRANT_URL, api_key=API_KEY)
+qdrant_client = QdrantClient(QDRANT_URL, api_key=API_KEY)
 
 # Embedding Model
 embedder = SentenceTransformer('all-MiniLM-L6-v2')
@@ -74,7 +75,7 @@ def query_pdf():
 
         # Search Qdrant for the top 10 matching chunks
         print("Querying Qdrant for matching vectors.")
-        search_result = client.search(
+        search_result = qdrant_client.search(
             collection_name=COLLECTION_NAME,
             query_vector=query_vector,
             limit=10  # Retrieve top 10 most relevant chunks
@@ -110,52 +111,38 @@ def query_pdf():
             f"Question: {user_query}\n"
             f"Answer:"
         )
-        print("Sending prompt to LLM.")
+        print("Sending prompt to OpenAI GPT-4o-mini.")
 
-        # Call Hugging Face LLM API with the combined context
-        headers = {
-            "Authorization": f"Bearer {HF_API_TOKEN}",
-            "Content-Type": "application/json"
-        }
+        try:
+            # Make API call to GPT-4o-mini
+            response = openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "user", "content": prompt}
+                ]
+            )
 
-        payload = {
-            "inputs": prompt,
-            "parameters": {
-                "max_new_tokens": 1000  # Adjust this to a larger number if necessary
-            },
-            "options": {"wait_for_model": True}
-        }
-        
-        print(f"Payload sent to LLM: {payload}")
+            # For Logging raw response for troubleshooting
+            def log_llm_response(response):
+                with open("llm_response_log.txt", "a", encoding="utf-8") as log_file:
+                    log_file.write(f"{response}\n\n")
 
-        response = requests.post(HF_API_URL, headers=headers, json=payload)
-        response.raise_for_status()
-        print("Received successful response from Hugging Face API.")
+            # Log the raw response
+            log_llm_response(response)
 
-        # For Logging raw response for troubleshooting
-        def log_llm_response(response):
-            with open("llm_response_log.txt", "a", encoding="utf-8") as log_file:
-                log_file.write(f"{response}\n\n")
+            # Extract and clean up the LLM response
+            llm_reply = response.choices[0].message.content.strip()
 
-        data = response.json()
-        # Log raw response for troubleshooting
-        log_llm_response(data)
+            if "Answer:" in llm_reply:
+                llm_reply = llm_reply.split("Answer:")[-1].strip()
 
-        # Handle different response structures
-        if isinstance(data, list) and data:
-            llm_reply = data[0].get('generated_text', 'No response.')
-        elif isinstance(data, dict):
-            llm_reply = data.get('generated_text', 'No response.')
-        else:
-            llm_reply = "No response received from LLM."
+            print(f"LLM Reply-------> : {llm_reply}")
+        except Exception as e:
+            print("Internal server error occurred.")
+            print(str(e))
+            return jsonify({"error": f"Internal server error: {str(e)}"}), 500
 
-        llm_reply = data[0].get('generated_text', 'No response.')
 
-        # Extract the actual answer from the response
-        if "Answer:" in llm_reply:
-            llm_reply = llm_reply.split("Answer:")[-1].strip()
-
-        print(f"LLM Reply-------> : {llm_reply}")
         # Generate user and session IDs for logging (replace with actual logic)
         user_id = request.headers.get("X-User-ID", str(uuid.uuid4()))  # Use header if available, else generate UUID
         session_id = request.headers.get("X-Session-ID", str(uuid.uuid4()))
@@ -166,7 +153,7 @@ def query_pdf():
             session_id=session_id,
             prompt=user_query,
             response=llm_reply,
-            source_pdf="charity_guidelines.pdf",  # Update with actual PDF source
+            source_pdf="charity_guidelines.pdf",  # TODO: Update with actual PDF source, can't get it to work
             metadata={"ip": request.remote_addr, "user_agent": request.headers.get("User-Agent")}
         )
 
@@ -194,7 +181,7 @@ def test_qdrant():
     query_vector = embedder.encode([user_query])[0].tolist()
 
     # Perform search in Qdrant
-    search_result = client.search(
+    search_result = qdrant_client.search(
         collection_name=COLLECTION_NAME,
         query_vector=query_vector,
         limit=3  # Get top 3 chunks
@@ -237,5 +224,5 @@ def chat():
 
 
 if __name__ == '__main__':
-    port = int(os.getenv('PORT', 5000))  # Default to 5000 if PORT is not set
+    port = int(os.getenv('PORT', 5005))  # Default to 5000 if PORT is not set
     app.run(host='0.0.0.0', port=port)
