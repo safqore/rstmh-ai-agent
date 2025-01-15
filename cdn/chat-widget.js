@@ -8,7 +8,7 @@
       line-height: 1.4;
     }
 
-    /* Chat bubble */
+    /* Chat bubble for agent */
     #safqore-chat-wrapper .chat-bubble {
       position: fixed;
       bottom: 20px;
