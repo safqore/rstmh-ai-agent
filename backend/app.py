@@ -1,5 +1,5 @@
 from http.client import HTTPException
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_from_directory
 from flask_cors import CORS
 from pydantic import BaseModel
 import requests
@@ -13,7 +13,17 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 app = Flask(__name__, static_folder='../frontend', template_folder='../frontend')
+# app.static_folder = '../cdn'  # Serve static files from the cdn folder
 CORS(app, supports_credentials=True, resources={r"/*": {"origins": "*"}})  # Enable CORS for all routes
+
+# Serve files from the 'cdn' directory
+@app.route('/cdn/huggingface.js')
+def serve_huggingface_js():
+    return send_from_directory('../cdn', 'huggingface.js')
+
+@app.route('/cdn/chat-widget.js')
+def serve_chat_widget_js():
+    return send_from_directory('../cdn', 'chat-widget.js')
 
 load_dotenv()
 
