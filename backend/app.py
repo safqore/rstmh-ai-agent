@@ -5,7 +5,7 @@ from pydantic import BaseModel
 import requests
 from qdrant_client import QdrantClient
 from sentence_transformers import SentenceTransformer
-from supabase_logging import log_interaction
+from supabase_logging import log_interaction, get_or_create_session
 import os
 import re
 import uuid
@@ -62,6 +62,13 @@ def index():
 def query_pdf():
     try:
         print("Received request on /query endpoint.")
+
+       # Read user_id and session_id from headers or generate new ones
+        user_id = request.headers.get("X-User-ID", str(uuid.uuid4()))  # Generate if missing
+        session_id = request.headers.get("X-Session-ID", str(uuid.uuid4()))  # Generate if missing
+
+        # Get or create a valid session
+        session_id = get_or_create_session(user_id, session_id)
 
         # Extract user_query directly from the request body (JSON)
         data = request.json
@@ -151,11 +158,6 @@ def query_pdf():
             print("Internal server error occurred.")
             print(str(e))
             return jsonify({"error": f"Internal server error: {str(e)}"}), 500
-
-
-        # Generate user and session IDs for logging (replace with actual logic)
-        user_id = request.headers.get("X-User-ID", str(uuid.uuid4()))  # Use header if available, else generate UUID
-        session_id = request.headers.get("X-Session-ID", str(uuid.uuid4()))
 
         # Log interaction
         log_interaction(
