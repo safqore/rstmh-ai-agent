@@ -227,7 +227,15 @@
       </div>
       <div class="chat-body">
         <div class="chat-message bot">
-          <span>What can I answer for you?</span>
+          <span><b>Welcome to the RSTMH Early Career Grants AI Assistant!</b><br />
+                  Thank you for visiting. I’m here to help with all your queries 
+                  about the RSTMH Early Career Grants Programme, 
+                  including eligibility, the application process, 
+                  key dates, and funding details.
+                <p>
+                  How can I assist you today?
+                </p>
+</span>
         </div>
       </div>
       <div class="chat-footer">
