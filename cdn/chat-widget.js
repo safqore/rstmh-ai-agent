@@ -8,65 +8,111 @@
       line-height: 1.4;
     }
 
-    /* Chat bubble for agent */
+    /* Chat window - default hidden state */
+    #safqore-chat-wrapper .chat-window {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 426px;
+      min-width: 350px;
+      min-height: 400px;
+      background: #fff;
+      border: none;
+      border-radius: 10px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+      display: none;
+      flex-direction: column;
+      z-index: 9999;
+      overflow: hidden;
+      font-size: 0.9rem;
+      color: #3f4748;
+      font-family: "Arial", sans-serif;
+      transform: translateY(100%);
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      opacity: 0;
+    }
+
+
+
+
+    /* Open state */
+    #safqore-chat-wrapper .chat-window.open {
+      display: flex;
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* Chat bubble */
     #safqore-chat-wrapper .chat-bubble {
       position: fixed;
       bottom: 20px;
       right: 20px;
-      background: #4A5EE5;
+      background: #006778;
       color: #fff;
       padding: 12px 16px;
       border-radius: 20px;
       cursor: pointer;
-      font-size: 0.9rem;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      font-family: "Arial", sans-serif;
+      font-size: 1rem;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
       display: flex;
       align-items: center;
       z-index: 9999;
-      transition: background 0.3s ease;
+      animation: pulse-button 4s infinite;
+      transition: background 0.3s ease, opacity 0.3s ease;
     }
 
+
     #safqore-chat-wrapper .chat-bubble:hover {
-      background: #3a4eca;
+      background: #006778;
+      transform: scale(1.05);
+    }
+
+    /* For larger screens */
+    @media (min-width: 600px) {
+      #safqore-chat-wrapper .chat-window {
+        height: 80vh; /* 80% of the viewport height */
+      }
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 600px) {
+      #safqore-chat-wrapper .chat-window {
+        width: 100%;
+        height: 100%;
+        right: 0;
+        bottom: 0;
+        border-radius: 0;
+        max-height: none;
+      }
+    }
+
+    @keyframes pulse-button {
+      0% {
+        box-shadow: 0 0 0 0 rgba(153, 24, 54, 0.7); /* Darker shade */
+      }
+      50% {
+        box-shadow: 0 0 15px 10px rgba(153, 24, 54, 0.3); /* Lighter shade */
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(153, 24, 54, 0.7); /* Darker shade */
+      }
     }
 
     #safqore-chat-wrapper .chat-bubble .icon {
       margin-right: 8px;
     }
 
-    /* Chat window */
-    #safqore-chat-wrapper .chat-window {
-      position: fixed;
-      bottom: 80px;
-      right: 20px;
-      width: 426px;
-      min-width: 350px;
-      max-height: 700px;
-      min-height: 400px;
-      background: #fff;
-      border: none;
-      border-radius: 10px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.1);
-      display: none;
-      flex-direction: column;
-      z-index: 9999;
-      overflow: hidden;
-      font-size: 0.9rem;
-      color: #333;
-      font-family: "Helvetica Neue", Arial, sans-serif;
-    }
-
-    #safqore-chat-wrapper .chat-window.open {
-      display: flex;
-    }
-
     /* Header with gradient background */
     #safqore-chat-wrapper .chat-header {
-      background: linear-gradient(45deg, #4A5EE5, #D53EF5);
+      background: #006778;
       color: #fff;
+      font-family: "Arial", sans-serif;
+      font-size: 1.1rem;
       padding: 16px;
       position: relative;
     }
+
 
     #safqore-chat-wrapper .chat-header .header-text h2 {
       margin: 0 0 4px 0;
@@ -91,11 +137,15 @@
     }
 
     #safqore-chat-wrapper .chat-body {
+      font-family: "Arial", sans-serif;
+      color: #3f4748;
       flex: 1;
       padding: 10px;
       overflow-y: auto;
       background: #fff;
+      line-height: 1.5;
     }
+
 
     #safqore-chat-wrapper .chat-message {
       margin-bottom: 12px;
@@ -112,20 +162,80 @@
     }
 
     #safqore-chat-wrapper .chat-message.user {
-      text-align: right;
+      text-align: right; /* Align the user message to the right */
+      padding-right: 12px; /* Space between the message bubble and the right edge */
+      margin-left: auto; /* Add space to the left of the user message */
+      max-width: 85%; /* Prevent the bubble from stretching across the full width */
     }
 
     #safqore-chat-wrapper .chat-message.user span {
-      background: #4A5EE5;
-      color: #fff;
+      display: inline-block;
+      background: #006778; /* User message background color */
+      color: #fff; /* User message text color */
+      padding: 10px 12px;
+      border-radius: 12px 12px 0 12px; /* Top-left, top-right, bottom-right, bottom-left */
+      word-wrap: break-word; /* Ensure text wraps nicely */
+      line-height: 1.5;
     }
 
     #safqore-chat-wrapper .chat-message.bot {
       text-align: left;
+      margin-right: auto;
+      margin-left: 10px;
+      max-width: 85%;
+      background: #f9f9f9;
+      padding: 12px;
+      border-radius: 12px 12px 12px 0; /* Top-left, top-right, bottom-right, bottom-left */
+      border: 1px solid #e0e0e0;
+      box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
     }
 
     #safqore-chat-wrapper .chat-message.bot span {
-      background: #ebebeb;
+    display: inline-block;
+    background: #f9f9f9; /* Agent response background */
+    color: #3f4748; /* Agent response text color */
+    word-wrap: break-word;
+  }  
+
+
+    /* Bot Response Styling */
+    #safqore-chat-wrapper .formatted-response h3 {
+      font-size: 1rem;
+      color: #4A5EE5;
+      margin: 5px 0; /* Reduced margin */
+      font-weight: bold;
+    }
+
+    #safqore-chat-wrapper .formatted-response h4 {
+      font-size: 0.9rem;
+      color: #333;
+      margin: 4px 0; /* Reduced margin */
+    }
+
+    #safqore-chat-wrapper .formatted-response ul {
+      list-style-type: disc;
+      margin: 5px 0; /* Reduced margin around list */
+      padding-left: 20px; /* Maintain indentation */
+    }
+
+    #safqore-chat-wrapper .formatted-response ol {
+      list-style-type: decimal;
+      margin: 5px 0; /* Reduced margin */
+      padding-left: 20px;
+    }
+
+    #safqore-chat-wrapper .formatted-response li {
+      margin-bottom: 3px; /* Reduce space between list items */
+      line-height: 1.5; /* Slightly tighter line spacing */
+    }
+
+    #safqore-chat-wrapper .formatted-response strong {
+      font-weight: bold;
+      color: #333;
+    }
+
+    #safqore-chat-wrapper .formatted-response br {
+      margin-bottom: 2px; /* Minimized extra space from line breaks */
     }
 
     #safqore-chat-wrapper .chat-footer {
@@ -136,6 +246,16 @@
       flex-direction: column;
       gap: 6px;
       position: relative;
+    }
+    
+    /* Links and Highlights */
+    #safqore-chat-wrapper a {
+      color: #00adcd;
+      text-decoration: none;
+    }
+
+    #safqore-chat-wrapper a:hover {
+      text-decoration: underline;
     }
 
     /* Input row without attach button */
@@ -182,15 +302,17 @@
       text-align: center;
     }
 
-    @media (max-width: 600px) {
-      #safqore-chat-wrapper .chat-window {
-        width: 100%;
-        height: 100%;
-        right: 0;
-        bottom: 0;
-        border-radius: 0;
-      }
+    #safqore-chat-wrapper .powered-by a {
+      color: #aaa; /* Link color */
+      text-decoration: underline; /* Add underline on hover */
     }
+
+    #safqore-chat-wrapper .powered-by a:hover {
+      text-decoration: underline; /* Add underline on hover */
+      font-weight: bold;
+      color: #aaa; /* Slightly darker teal on hover */
+    }
+
 
     .typing-indicator {
       display: flex;
@@ -215,27 +337,22 @@
   wrapper.id = 'safqore-chat-wrapper';
   wrapper.innerHTML = `
     <div class="chat-bubble" id="chat-bubble">
-      <span class="icon">💬</span> Grant Application Questions? Let’s Chat!
+      <span class="icon">💬</span>Grant Application Questions? Let’s Chat!
     </div>
     <div class="chat-window" id="chat-window">
       <div class="chat-header">
         <div class="header-text">
-          <h2>Welcome to Safqore AI ✨</h2>
-          <p>RSTMH Grants Agent (Demo)</p>
+          <h2>RSTMH Grants - AI Assistant ✨</h2>
         </div>
         <button id="close-chat" class="close-btn">&times;</button>
       </div>
       <div class="chat-body">
         <div class="chat-message bot">
-          <span><b>Welcome to the RSTMH Early Career Grants AI Assistant!</b><br />
-                  Thank you for visiting. I’m here to help with all your queries 
-                  about the RSTMH Early Career Grants Programme, 
-                  including eligibility, the application process, 
-                  key dates, and funding details.
-                <p>
-                  How can I assist you today?
-                </p>
-</span>
+          <span>
+            <b>Welcome to the RSTMH Early Career Grants AI Assistant!</b><br><br>
+            Thank you for visiting. I’m here to help with all your queries about the RSTMH Early Career Grants Programme, including eligibility, the application process, key dates, and funding details.<br><br>
+            How can I assist you today?
+          </span>
         </div>
       </div>
       <div class="chat-footer">
@@ -256,17 +373,19 @@
   document.body.appendChild(wrapper);
 
   function formatLLMResponse(text) {
-    // Replace newlines with line breaks and detect bullet points
     return text
-        .replace(/\n\s*-\s/g, '<li>')            // Convert - to <li>
-        .replace(/\n\n/g, '</li><br>')           // Double new line ends list item
-        .replace(/\n/g, '<br>')                  // Single newline for line breaks
-        .replace(/<\/li><br>/g, '</li>')         // Clean unnecessary <br> after </li>
-        .replace(/^Answer:/, '<strong>Answer:</strong><br>')  // Bold the answer prefix
-        .replace(/^/, '<ul>')                    // Start unordered list
-        .replace(/$/, '</ul>');                  // End unordered list
+      .replace(/(\s*<br>\s*)+/g, '<br>') // Replace multiple <br> tags with a single <br>
+      .replace(/^##\s(.+)$/gm, '<h3>$1</h3>') // Convert '## Heading' to <h3>
+      .replace(/^###\s(.+)$/gm, '<h4>$1</h4>') // Convert '### Subheading' to <h4>
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') // Convert **bold** text
+      .replace(/^- (.+)$/gm, '<li>$1</li>') // Convert bullet points
+      .replace(/^(\d+)\.\s(.+)$/gm, '<li>$2</li>') // Convert numbered lists
+      .replace(/<\/li>\n<li>/g, '</li><li>') // Fix list item breaks
+      .replace(/<li>.*<\/li>/g, '<ul>$&</ul>') // Wrap bullet points in <ul>
+      .replace(/<\/ul>\n<ul>/g, '') // Avoid nested <ul> tags
+      .replace(/\n/g, '<br>'); // Convert remaining newlines to <br>
   }
-
+  
   const chatBubble = wrapper.querySelector('#chat-bubble');
   const chatWindow = wrapper.querySelector('#chat-window');
   const closeChat = wrapper.querySelector('#close-chat');
@@ -275,35 +394,48 @@
   const chatBody = wrapper.querySelector('.chat-body');
   const typingIndicator = wrapper.querySelector('#typing-indicator');
 
+
   chatBubble.addEventListener('click', () => {
-    chatWindow.classList.toggle('open');
+    // Hide the chat bubble
+    chatBubble.style.opacity = '0';
+    chatBubble.style.pointerEvents = 'none';
+  
+    // Show and animate the chat window
+    chatWindow.classList.add('open');
+
+    // Ensure the input field is focused
+    chatInput.focus();
+  });
+  
+  closeChat.addEventListener('click', () => {
+    // Hide the chat window with animation
+    chatWindow.classList.remove('open');
+  
+    // Show the chat bubble again after animation
+    setTimeout(() => {
+      chatBubble.style.opacity = '1';
+      chatBubble.style.pointerEvents = 'auto';
+    }, 300); // Match the duration of the chat window animation
   });
 
-  closeChat.addEventListener('click', () => {
-    chatWindow.classList.remove('open');
-  });
+
 
   async function handleUserMessage(userMsg) {
-    // Display user's message
     const userMsgElem = document.createElement('div');
     userMsgElem.className = 'chat-message user';
     userMsgElem.innerHTML = `<span>${userMsg}</span>`;
     chatBody.appendChild(userMsgElem);
     chatBody.scrollTop = chatBody.scrollHeight;
 
-    // Show typing indicator
     typingIndicator.style.display = 'flex';
 
-    // Simulate getting LLM response
     const botReply = await window.getLLMResponse(userMsg);
 
-    // Hide typing indicator
     typingIndicator.style.display = 'none';
 
-    // Display bot response
     const botMsgElem = document.createElement('div');
     botMsgElem.className = 'chat-message bot';
-    botMsgElem.innerHTML = `<span>${formatLLMResponse(botReply)}</span>`;
+    botMsgElem.innerHTML = `<div class="formatted-response">${formatLLMResponse(botReply)}</div>`;
     chatBody.appendChild(botMsgElem);
     chatBody.scrollTop = chatBody.scrollHeight;
   }
