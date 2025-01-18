@@ -184,57 +184,6 @@ def query_pdf():
         print(str(e))
         return jsonify({"error": f"Internal server error: {str(e)}"}), 500
 
-
-@app.route('/test_qdrant', methods=['POST'])
-def test_qdrant():
-    user_query = request.json.get('query')
-    
-    # Generate embedding for the user query
-    query_vector = embedder.encode([user_query])[0].tolist()
-
-    # Perform search in Qdrant
-    search_result = qdrant_client.search(
-        collection_name=COLLECTION_NAME,
-        query_vector=query_vector,
-        limit=3  # Get top 3 chunks
-    )
-
-    # Extract and return the matching chunks
-    chunks = [result.payload['text'] for result in search_result if 'text' in result.payload]
-    return jsonify({"chunks": chunks})
-
-
-@app.route('/api/chat', methods=['POST'])
-def chat():
-    user_message = request.json.get('message')
-
-    if not user_message:
-        return jsonify({"reply": "Message is required."}), 400
-
-    payload = {
-        "inputs": user_message,
-        "options": {"wait_for_model": True}
-    }
-
-    headers = {
-        "Authorization": f"Bearer {HF_API_TOKEN}",
-        "Content-Type": "application/json"
-    }
-
-    try:
-        response = requests.post(HF_API_URL, headers=headers, json=payload)
-        response.raise_for_status()
-
-        data = response.json()
-        print("API Response: ", data)  # Debugging line
-        reply = data[0].get('generated_text', 'No response.')
-        return jsonify({"reply": reply.strip()})
-
-    except requests.exceptions.RequestException as e:
-        print(f"Error contacting Hugging Face API: {e}")
-        return jsonify({"reply": "An error occurred while fetching the response."}), 500
-
-
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))  # Default to 5000 if PORT is not set
     app.run(host='0.0.0.0', port=port)
