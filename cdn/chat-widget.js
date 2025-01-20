@@ -32,9 +32,6 @@
       opacity: 0;
     }
 
-
-
-
     /* Open state */
     #safqore-chat-wrapper .chat-window.open {
       display: flex;
@@ -112,7 +109,6 @@
       padding: 16px;
       position: relative;
     }
-
 
     #safqore-chat-wrapper .chat-header .header-text h2 {
       margin: 0 0 4px 0;
@@ -196,7 +192,6 @@
     color: #3f4748; /* Agent response text color */
     word-wrap: break-word;
   }  
-
 
     /* Bot Response Styling */
     #safqore-chat-wrapper .formatted-response h3 {
@@ -313,22 +308,56 @@
       color: #aaa; /* Slightly darker teal on hover */
     }
 
-
-    .typing-indicator {
+    #safqore-chat-wrapper .typing-indicator {
       display: flex;
-      align-items: center;
+      align-items: flex-end; /* Align dots to the bottom of the text */
       gap: 5px;
       font-size: 0.85rem;
       color: #aaa;
-      margin-top: 5px;
     }
 
-    .typing-indicator .dot {
+    #safqore-chat-wrapper .typing-indicator .dot {
       width: 6px;
       height: 6px;
       background-color: #aaa;
       border-radius: 50%;
-      animation: blink 1.4s infinite;
+      animation: bounce 1.4s infinite ease-in-out;
+      margin-bottom: 2px; /* Adjust the dots slightly higher */
+    }
+
+    #safqore-chat-wrapper .typing-indicator .dot:nth-child(1) {
+      animation-delay: -0.32s;
+    }
+    #safqore-chat-wrapper .typing-indicator .dot:nth-child(2) {
+      animation-delay: -0.16s;
+    }
+    #safqore-chat-wrapper .typing-indicator .dot:nth-child(3) {
+      animation-delay: 0;
+    }
+
+    @keyframes bounce {
+      0%, 80%, 100% {
+        transform: scale(0);
+      }
+      40% {
+        transform: scale(1);
+      }
+    }
+
+    #safqore-chat-wrapper .message-timestamp-user {
+      font-size: 0.75rem; /* Match 'Powered By' font size */
+      color: #aaa; /* Match 'Powered By' text color */
+      margin-top: 4px; /* Add slight spacing above the timestamp */
+      text-align: right; /* Align with the message bubble */
+    }
+
+    #safqore-chat-wrapper .message-timestamp-bot {
+      font-size: 0.75rem; /* Same size as 'Powered By' text */
+      color: #aaa; /* Same color as 'Powered By' text */
+      margin-top: -8px;
+      margin-left: 11px; /* Align to the left */
+      text-align: left;
+      padding-bottom: 12px;
     }
   `;
   document.head.appendChild(style);
@@ -394,7 +423,6 @@
   const chatBody = wrapper.querySelector('.chat-body');
   const typingIndicator = wrapper.querySelector('#typing-indicator');
 
-
   chatBubble.addEventListener('click', () => {
     // Hide the chat bubble
     chatBubble.style.opacity = '0';
@@ -418,28 +446,55 @@
     }, 300); // Match the duration of the chat window animation
   });
 
-
+  function getLocalTimestamp() {
+    const now = new Date();
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const day = days[now.getDay()];
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    return `${day} ${hours}:${minutes}`;
+  }  
 
   async function handleUserMessage(userMsg) {
+    const usertimestamp = getLocalTimestamp();
+
+    // Add user message
     const userMsgElem = document.createElement('div');
     userMsgElem.className = 'chat-message user';
-    userMsgElem.innerHTML = `<span>${userMsg}</span>`;
+    userMsgElem.innerHTML = `<span>${userMsg}</span><div class="message-timestamp-user">${usertimestamp}</div>`;
     chatBody.appendChild(userMsgElem);
     chatBody.scrollTop = chatBody.scrollHeight;
-
+  
     typingIndicator.style.display = 'flex';
-
+  
+    // Simulate agent response
     const botReply = await window.getLLMResponse(userMsg);
-
+  
     typingIndicator.style.display = 'none';
-
-    const botMsgElem = document.createElement('div');
-    botMsgElem.className = 'chat-message bot';
-    botMsgElem.innerHTML = `<div class="formatted-response">${formatLLMResponse(botReply)}</div>`;
-    chatBody.appendChild(botMsgElem);
+  
+    // Add bot message
+    const botMsgContainer = document.createElement('div');
+    botMsgContainer.className = 'chat-message bot';
+  
+    const botMessageContent = document.createElement('div');
+    botMessageContent.className = 'formatted-response';
+    botMessageContent.innerHTML = formatLLMResponse(botReply);
+  
+    const timestamp = document.createElement('div');
+    timestamp.className = 'message-timestamp-bot';
+    timestamp.innerHTML = `AI Assistant -  ${new Date().toLocaleString('en-US', {
+      weekday: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    })}`;
+  
+    botMsgContainer.appendChild(botMessageContent);
+    chatBody.appendChild(botMsgContainer);
+    chatBody.appendChild(timestamp); // Append timestamp as a sibling element
     chatBody.scrollTop = chatBody.scrollHeight;
   }
-
+  
   chatInput.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
       const userMsg = chatInput.value.trim();
