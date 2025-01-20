@@ -11,6 +11,7 @@ import re
 import uuid
 from dotenv import load_dotenv
 from openai import OpenAI
+from qdrant_client.http import models
 
 app = Flask(__name__, static_folder='../frontend', template_folder='../frontend')
 # app.static_folder = '../cdn'  # Serve static files from the cdn folder
@@ -58,12 +59,62 @@ def handle_options():
 def index():
     return render_template('index.html')
 
+# New Collection Names for Separate PDFs
+FAQ_COLLECTION = "faq_vectors"
+DETAILS_COLLECTION = "details_vectors"
+
+# For Logging raw response for troubleshooting
+def log_llm_response(response):
+    with open("llm_response_log.txt", "a", encoding="utf-8") as log_file:
+        log_file.write(f"{response}\n\n")
+
+def search_with_fallback(query_vector, faq_collection, details_collection, top_k=3, threshold=0.8):
+    """
+    Search Qdrant collections with a fallback mechanism.
+
+    Args:
+        query_vector (list): The embedding of the query.
+        faq_collection (str): The name of the FAQ collection.
+        details_collection (str): The name of the Details collection.
+        top_k (int): Number of top results to retrieve.
+        threshold (float): Minimum score to consider a result as relevant.
+
+    Returns:
+        tuple: A tuple containing the search results and the source collection name.
+    """
+    try:
+        # Search FAQ collection first
+        faq_results = qdrant_client.search(
+            collection_name=faq_collection,
+            query_vector=query_vector,
+            limit=top_k
+        )
+        print(f"[DEBUG] FAQ Results: {faq_results}")
+
+        # Check if any result meets the threshold in FAQ collection
+        if faq_results and any(result.score >= threshold for result in faq_results):
+            return faq_results, faq_collection
+
+        # Fallback to Details collection
+        details_results = qdrant_client.search(
+            collection_name=details_collection,
+            query_vector=query_vector,
+            limit=top_k
+        )
+        print(f"[DEBUG] Details Results: {details_results}")
+
+        return details_results, details_collection
+
+    except Exception as e:
+        print(f"[ERROR] Failed to execute search_with_fallback: {str(e)}")
+        raise
+
 @app.post("/query")
 def query_pdf():
     try:
         print("Received request on /query endpoint.")
 
-       # Read user_id and session_id from headers or generate new ones
+        # Read user_id and session_id from headers or generate new ones
         user_id = request.headers.get("X-User-ID", str(uuid.uuid4()))  # Generate if missing
         session_id = request.headers.get("X-Session-ID", str(uuid.uuid4()))  # Generate if missing
 
@@ -90,37 +141,29 @@ def query_pdf():
         query_vector = embedder.encode([user_query])[0].tolist()
         print(f"Generated embedding vector (first 10 values): {query_vector[:10]}...")
 
-        # Search Qdrant for the top 10 matching chunks
-        print("Querying Qdrant for matching vectors.")
-        search_result = qdrant_client.search(
-            collection_name=COLLECTION_NAME,
-            query_vector=query_vector,
-            limit=10  # Retrieve top 10 most relevant chunks
-        )
+        # Search FAQ first, then fallback to Details
+        search_results, source = search_with_fallback(query_vector, FAQ_COLLECTION, DETAILS_COLLECTION)
 
-        # Log Qdrant search response
-        # print(f"Qdrant search result: {search_result}")
+        if not search_results:
+            print("No results found in both collections.")
+            return jsonify({"error": "No relevant information found."}), 404
 
-        # Extract and combine relevant text from the search results
-        relevant_chunks = [result.payload['text'] for result in search_result if 'text' in result.payload]
-        # print(f"Retrieved {len(relevant_chunks)} chunks from Qdrant.")
-
+        # Extract relevant chunks from the results
+        relevant_chunks = []
+        for result in search_results:
+            question = result.payload.get("question", "No question found")
+            answer = result.payload.get("answer", "No answer found")
+            score = result.score
+            relevant_chunks.append(f"Question: {question}\nAnswer: {answer}\nScore: {score}")
         # If no chunks are found, return an error
         if not relevant_chunks:
             print("No relevant chunks found in Qdrant.")
             return jsonify({"error": "No relevant information found."}), 404
 
-        # Combine the chunks into a single context for the LLM
-        context = " ".join(relevant_chunks)
-        # print(f"Context prepared for LLM ---> (first 200 chars): {context[:200]}...")
+        # Combine the chunks into a single context
+        context = "\n\n".join(relevant_chunks)
 
-        # Truncate context if it's too long (to avoid exceeding API limits)
-        # MAX_CONTEXT_LENGTH = 1000
-        # if len(context) > MAX_CONTEXT_LENGTH:
-        #     print(f"Context too long ({len(context)} chars), truncating...")
-        #    context = context[:MAX_CONTEXT_LENGTH]
-
-        # Prepare the LLM prompt with context
+        # Prepare LLM prompt
         prompt = (
             f"You are an expert assistant. Answer the following question based on the provided context.\n\n"
             f"Context:\n{context}\n\n"
@@ -130,34 +173,20 @@ def query_pdf():
         )
         print("Sending prompt to OpenAI GPT-4o-mini.")
 
-        try:
-            # Make API call to GPT-4o-mini
-            response = openai_client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "user", "content": prompt}
-                ]
-            )
+        # Call OpenAI API
+        response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}]
+        )
 
-            # For Logging raw response for troubleshooting
-            def log_llm_response(response):
-                with open("llm_response_log.txt", "a", encoding="utf-8") as log_file:
-                    log_file.write(f"{response}\n\n")
+        # Log the raw response
+        log_llm_response(response)
 
-            # Log the raw response
-            log_llm_response(response)
+        # Extract and clean up the LLM response
+        llm_reply = response.choices[0].message.content.strip()
 
-            # Extract and clean up the LLM response
-            llm_reply = response.choices[0].message.content.strip()
-
-            if "Answer:" in llm_reply:
-                llm_reply = llm_reply.split("Answer:")[-1].strip()
-
-            print(f"LLM Reply-------> : {llm_reply}")
-        except Exception as e:
-            print("Internal server error occurred.")
-            print(str(e))
-            return jsonify({"error": f"Internal server error: {str(e)}"}), 500
+        if "Answer:" in llm_reply:
+            llm_reply = llm_reply.split("Answer:")[-1].strip()
 
         # Log interaction
         log_interaction(
@@ -165,14 +194,15 @@ def query_pdf():
             session_id=session_id,
             prompt=user_query,
             response=llm_reply,
-            source_pdf="charity_guidelines.pdf",  # TODO: Update with actual PDF source, can't get it to work
+            source_pdf=source,
             metadata={"ip": request.remote_addr, "user_agent": request.headers.get("User-Agent")}
         )
 
         return jsonify({
             "query": user_query,
             "answer": llm_reply,
-            "context": relevant_chunks
+            "context": relevant_chunks,
+            "source": source
         })
 
     except requests.exceptions.RequestException as e:
@@ -183,6 +213,7 @@ def query_pdf():
         print("Internal server error occurred.")
         print(str(e))
         return jsonify({"error": f"Internal server error: {str(e)}"}), 500
+
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))  # Default to 5000 if PORT is not set
