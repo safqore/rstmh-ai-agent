@@ -30,7 +30,10 @@ def serve_chat_widget_js():
 os.environ.clear()
 
 # Load dev environment variables
-load_dotenv(".env.dev")
+# load_dotenv(".env.dev")
+
+# Load prod environment variables
+load_dotenv()
 
 # Set the OpenAI API key
 openai_client = OpenAI(
