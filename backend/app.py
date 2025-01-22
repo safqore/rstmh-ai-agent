@@ -26,8 +26,8 @@ def serve_huggingface_js():
 def serve_chat_widget_js():
     return send_from_directory('../cdn', 'chat-widget.js')
 
-# Clear the environment variables
-os.environ.clear()
+# Clear the environment variables comment this out before checking in
+# os.environ.clear()
 
 # Load dev environment variables
 # load_dotenv(".env.dev")
