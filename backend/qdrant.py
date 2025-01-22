@@ -6,8 +6,8 @@ import PyPDF2
 import traceback
 import os
 
-# Clear the environment variables
-os.environ.clear()
+# Clear the environment variables comment this out before checking in
+# os.environ.clear()
 
 # Load dev environment variables
 # load_dotenv(".env.dev")
