@@ -24,7 +24,7 @@
       flex-direction: column;
       z-index: 9999;
       overflow: hidden;
-      font-size: 0.9rem;
+      font-size: 1.0rem;
       color: #3f4748;
       font-family: "Arial", sans-serif;
       transform: translateY(100%);
@@ -123,18 +123,18 @@
 
     #safqore-chat-wrapper .close-btn {
       position: absolute;
-      top: 8px;
+      top: 5px;
       right: 8px;
       background: transparent;
       border: none;
       color: #fff;
-      font-size: 1.4rem;
+      font-size: 2.4rem;
       cursor: pointer;
     }
 
     #safqore-chat-wrapper .chat-body {
       font-family: "Arial", sans-serif;
-      color: #3f4748;
+      color: black;
       flex: 1;
       padding: 10px;
       overflow-y: auto;
@@ -154,12 +154,12 @@
       border-radius: 12px;
       background: #f0f0f0;
       color: #333;
-      font-size: 0.9rem;
+      font-size: 1.0rem;
     }
 
     #safqore-chat-wrapper .chat-message.user {
       text-align: right; /* Align the user message to the right */
-      padding-right: 12px; /* Space between the message bubble and the right edge */
+      padding-right: 7px; /* Space between the message bubble and the right edge */
       margin-left: auto; /* Add space to the left of the user message */
       max-width: 85%; /* Prevent the bubble from stretching across the full width */
     }
@@ -177,8 +177,8 @@
     #safqore-chat-wrapper .chat-message.bot {
       text-align: left;
       margin-right: auto;
-      margin-left: 10px;
-      max-width: 85%;
+      margin-left: 5px;
+      max-width: 90%;
       background: #f9f9f9;
       padding: 12px;
       border-radius: 12px 12px 12px 0; /* Top-left, top-right, bottom-right, bottom-left */
@@ -189,7 +189,7 @@
     #safqore-chat-wrapper .chat-message.bot span {
     display: inline-block;
     background: #f9f9f9; /* Agent response background */
-    color: #3f4748; /* Agent response text color */
+    color: black; /* Agent response text color */
     word-wrap: break-word;
   }  
 
@@ -269,14 +269,14 @@
       background: transparent;
       outline: none;
       padding: 8px;
-      font-size: 0.9rem;
+      font-size: 1.0rem;
     }
 
     #safqore-chat-wrapper .send-btn {
       background: transparent;
       border: none;
       cursor: pointer;
-      color: #666;
+      color: #006778;
       font-size: 1.1rem;
       width: 32px;
       height: 32px;
@@ -289,6 +289,8 @@
 
     #safqore-chat-wrapper .send-btn:hover {
       background: #eee;
+      color: #004d59; /* Darker shade of the primary color for hover */
+
     }
 
     #safqore-chat-wrapper .powered-by {
@@ -346,16 +348,16 @@
 
     #safqore-chat-wrapper .message-timestamp-user {
       font-size: 0.75rem; /* Match 'Powered By' font size */
-      color: #aaa; /* Match 'Powered By' text color */
+      color: black; 
       margin-top: 4px; /* Add slight spacing above the timestamp */
       text-align: right; /* Align with the message bubble */
     }
 
     #safqore-chat-wrapper .message-timestamp-bot {
       font-size: 0.75rem; /* Same size as 'Powered By' text */
-      color: #aaa; /* Same color as 'Powered By' text */
+      color: black; 
       margin-top: -8px;
-      margin-left: 11px; /* Align to the left */
+      margin-left: 12px; /* Align to the left */
       text-align: left;
       padding-bottom: 12px;
     }
@@ -461,7 +463,7 @@
     // Add user message
     const userMsgElem = document.createElement('div');
     userMsgElem.className = 'chat-message user';
-    userMsgElem.innerHTML = `<span>${userMsg}</span><div class="message-timestamp-user">${usertimestamp}</div>`;
+    userMsgElem.innerHTML = `<span>${userMsg}</span><div class="message-timestamp-user">Sent - ${usertimestamp}</div>`;
     chatBody.appendChild(userMsgElem);
     chatBody.scrollTop = chatBody.scrollHeight;
   
@@ -482,7 +484,7 @@
   
     const timestamp = document.createElement('div');
     timestamp.className = 'message-timestamp-bot';
-    timestamp.innerHTML = `AI Assistant -  ${new Date().toLocaleString('en-US', {
+    timestamp.innerHTML = `RSTMH AI Assistant -  ${new Date().toLocaleString('en-US', {
       weekday: 'short',
       hour: '2-digit',
       minute: '2-digit',
