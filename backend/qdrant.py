@@ -6,7 +6,11 @@ import PyPDF2
 import traceback
 import os
 
-load_dotenv()
+# Clear the environment variables
+os.environ.clear()
+
+# Load dev environment variables
+load_dotenv(".env.dev")
 
 # Qdrant Cloud setup
 QDRANT_URL = os.getenv('QDRANT_URL')
@@ -192,19 +196,25 @@ def delete_all_collections():
 # Run the Process
 if __name__ == "__main__":
     try:
+        # Validate Data Before Querying
+        for collection_name in [FAQ_COLLECTION, DETAILS_COLLECTION]:
+            print(f"Checking {collection_name}...")
+            points = client.scroll(collection_name=collection_name, limit=10)
+            for point in points:
+                print(point)
         # delete_all_collections()
-        results = search_qdrant("Am I eligible to apply for an RSTMH Early Career Grant?", FAQ_COLLECTION)
-        for result in results:
-            question = result.payload.get("question", "No question found")
-            answer = result.payload.get("answer", "No answer found")
-            score = result.score
-            for _ in range(5):
-                print("-----------------")
-            print(f"Question: {question}")
-            print(f"Answer: {answer}")
-            print(f"Score: {score}")
-            for _ in range(5):
-                print("*")
+        # results = search_qdrant("Am I eligible to apply for an RSTMH Early Career Grant?", FAQ_COLLECTION)
+        # for result in results:
+        #     question = result.payload.get("question", "No question found")
+        #     answer = result.payload.get("answer", "No answer found")
+        #     score = result.score
+        #     for _ in range(5):
+        #         print("-----------------")
+        #     print(f"Question: {question}")
+        #     print(f"Answer: {answer}")
+        #     print(f"Score: {score}")
+        #     for _ in range(5):
+        #         print("*")
         # Upload PDFs to Separate Collections
         # faq_pdf_path = 'faq.pdf'  # Replace with the path to faq.pdf
         # details_pdf_path = 'details.pdf'  # Replace with the path to details.pdf

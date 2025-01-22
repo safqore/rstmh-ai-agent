@@ -26,7 +26,11 @@ def serve_huggingface_js():
 def serve_chat_widget_js():
     return send_from_directory('../cdn', 'chat-widget.js')
 
-load_dotenv()
+# Clear the environment variables
+os.environ.clear()
+
+# Load dev environment variables
+load_dotenv(".env.dev")
 
 # Set the OpenAI API key
 openai_client = OpenAI(
@@ -37,6 +41,7 @@ openai_client = OpenAI(
 QDRANT_URL = os.getenv('QDRANT_URL')
 API_KEY = os.getenv('QD_API_TOKEN')
 COLLECTION_NAME = "pdf_vectors"
+print(f"[DEBUG]: {QDRANT_URL}, {API_KEY}")
 qdrant_client = QdrantClient(QDRANT_URL, api_key=API_KEY)
 
 # Embedding Model
@@ -83,7 +88,7 @@ def search_with_fallback(query_vector, faq_collection, details_collection, top_k
         tuple: A tuple containing the search results and the source collection name.
     """
     try:
-        # Search FAQ collection first
+        print(f"[DEBUG] Searching FAQ collection: {faq_collection}")
         faq_results = qdrant_client.search(
             collection_name=faq_collection,
             query_vector=query_vector,
@@ -91,11 +96,14 @@ def search_with_fallback(query_vector, faq_collection, details_collection, top_k
         )
         print(f"[DEBUG] FAQ Results: {faq_results}")
 
-        # Check if any result meets the threshold in FAQ collection
-        if faq_results and any(result.score >= threshold for result in faq_results):
-            return faq_results, faq_collection
+        if faq_results:
+            # Check if any result meets the threshold
+            if any(result.score >= threshold for result in faq_results):
+                print("[DEBUG] Relevant FAQ result found.")
+                return faq_results, faq_collection
+            print("[DEBUG] FAQ results exist but none meet the threshold.")
 
-        # Fallback to Details collection
+        print("[INFO] Falling back to Details collection...")
         details_results = qdrant_client.search(
             collection_name=details_collection,
             query_vector=query_vector,
@@ -106,14 +114,14 @@ def search_with_fallback(query_vector, faq_collection, details_collection, top_k
         return details_results, details_collection
 
     except Exception as e:
-        print(f"[ERROR] Failed to execute search_with_fallback: {str(e)}")
+        print(f"[ERROR] Error in search_with_fallback: {str(e)}")
         raise
 
 @app.post("/query")
 def query_pdf():
     try:
-        print("Received request on /query endpoint.")
-
+        print("[DEBUG] Received request at /query endpoint.")
+        
         # Read user_id and session_id from headers or generate new ones
         user_id = request.headers.get("X-User-ID", str(uuid.uuid4()))  # Generate if missing
         session_id = request.headers.get("X-Session-ID", str(uuid.uuid4()))  # Generate if missing
@@ -123,45 +131,51 @@ def query_pdf():
 
         # Extract user_query directly from the request body (JSON)
         data = request.json
-        print(f"Incoming JSON Payload: {data}")
-
+        print(f"[DEBUG] Request payload: {data}")
+        
         if not data or 'user_query' not in data:
             print("Missing or invalid JSON payload.")
             return jsonify({"error": "Invalid or missing JSON payload."}), 400
 
-        user_query = data.get('user_query')
+        user_query = data.get('user_query', None)
         print(f"User query: {user_query}")
-
         if not user_query:
-            print("Query is empty.")
+            print("[DEBUG] Query is empty or missing.")
             return jsonify({"error": "Query cannot be empty"}), 400
 
         # Generate embedding (vector) for the user query
-        print("Generating embeddings for user query.")
+        print("[DEBUG] Generating embedding for user query.")
         query_vector = embedder.encode([user_query])[0].tolist()
-        print(f"Generated embedding vector (first 10 values): {query_vector[:10]}...")
+        print(f"[DEBUG] Generated query vector: {query_vector[:10]}...")
 
         # Search FAQ first, then fallback to Details
+        print("[DEBUG] Invoking search_with_fallback...")
         search_results, source = search_with_fallback(query_vector, FAQ_COLLECTION, DETAILS_COLLECTION)
 
         if not search_results:
-            print("No results found in both collections.")
+            print("[DEBUG] No results found in either collection.")
             return jsonify({"error": "No relevant information found."}), 404
 
         # Extract relevant chunks from the results
         relevant_chunks = []
         for result in search_results:
-            question = result.payload.get("question", "No question found")
-            answer = result.payload.get("answer", "No answer found")
-            score = result.score
-            relevant_chunks.append(f"Question: {question}\nAnswer: {answer}\nScore: {score}")
-        # If no chunks are found, return an error
+            if source == FAQ_COLLECTION:
+                question = result.payload.get("question", "No question found")
+                answer = result.payload.get("answer", "No answer found")
+                score = result.score
+                relevant_chunks.append(f"Question: {question}\nAnswer: {answer}\nScore: {score}")
+            elif source == DETAILS_COLLECTION:
+                text = result.payload.get("text", "No text found")
+                score = result.score
+                relevant_chunks.append(f"Text: {text}\nScore: {score}")
+
         if not relevant_chunks:
-            print("No relevant chunks found in Qdrant.")
+            print("[DEBUG] No relevant chunks extracted.")
             return jsonify({"error": "No relevant information found."}), 404
 
         # Combine the chunks into a single context
         context = "\n\n".join(relevant_chunks)
+        print(f"[DEBUG] Context for LLM: {context[:200]}...")
 
         # Prepare LLM prompt
         prompt = (
@@ -171,7 +185,7 @@ def query_pdf():
             f"Question: {user_query}\n"
             f"Answer:"
         )
-        print("Sending prompt to OpenAI GPT-4o-mini.")
+        print("[DEBUG] Sending prompt to OpenAI GPT-4o-mini.")
 
         # Call OpenAI API
         response = openai_client.chat.completions.create(
@@ -182,8 +196,8 @@ def query_pdf():
         # Log the raw response
         log_llm_response(response)
 
-        # Extract and clean up the LLM response
         llm_reply = response.choices[0].message.content.strip()
+        print(f"[DEBUG] LLM Reply: {llm_reply}")
 
         if "Answer:" in llm_reply:
             llm_reply = llm_reply.split("Answer:")[-1].strip()
@@ -208,12 +222,10 @@ def query_pdf():
     except requests.exceptions.RequestException as e:
         print(f"Request to LLM API failed: {str(e)}")
         return jsonify({"error": f"LLM request failed: {str(e)}"}), 500
-
+    
     except Exception as e:
-        print("Internal server error occurred.")
-        print(str(e))
+        print(f"[ERROR] Exception in /query: {str(e)}")
         return jsonify({"error": f"Internal server error: {str(e)}"}), 500
-
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))  # Default to 5000 if PORT is not set
