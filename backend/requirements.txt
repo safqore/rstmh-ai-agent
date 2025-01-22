@@ -1,10 +1,11 @@
+pip==24.3.1
 Flask==3.1.0
 flask_cors==5.0.0
-openai==1.59.7
+openai==1.59.8
 pydantic==2.10.5
 PyPDF2==3.0.1
 python-dotenv==1.0.1
-qdrant_client==1.12.2
+qdrant_client==1.13.0
 Requests==2.32.3
 sentence_transformers==3.3.1
 supabase==2.11.0
