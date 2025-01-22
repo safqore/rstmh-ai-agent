@@ -10,7 +10,10 @@ import os
 os.environ.clear()
 
 # Load dev environment variables
-load_dotenv(".env.dev")
+# load_dotenv(".env.dev")
+
+# Load prod environment variables
+load_dotenv()
 
 # Qdrant Cloud setup
 QDRANT_URL = os.getenv('QDRANT_URL')
