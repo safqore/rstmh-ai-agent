@@ -8,9 +8,9 @@ def test_query_endpoint(client, mock_supabase, mock_qdrant):
         from app.services.embedding_service import generate_embedding
         generate_embedding.return_value = mock_embedding
 
-    # Mock Qdrant search response
+    # Mock Qdrant search response with valid payload and score
     mock_qdrant.search.return_value = [
-        MagicMock(**{"payload": {"text": "Test result"}, "score": 0.95})
+        MagicMock(payload={"question": "What is Python?", "answer": "Python is a programming language."}, score=0.95)
     ]
 
     # Perform the request
@@ -23,5 +23,7 @@ def test_query_endpoint(client, mock_supabase, mock_qdrant):
     if response.status_code != 200:
         print("[DEBUG] Response data:", response.data.decode())
 
+    # Check the response
     assert response.status_code == 200
-    assert "Test result" in response.json["context"][0]
+    assert "What is Python?" in response.json["context"][0]  # Check for the question
+    assert "Python is a programming language." in response.json["context"][0]  # Check for the answer
