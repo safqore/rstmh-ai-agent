@@ -182,9 +182,10 @@ def query_pdf():
 
         # Prepare LLM prompt
         prompt = (
-            f"You are an expert assistant. Answer the following question based on the provided context.\n\n"
-            f"Context:\n{context}\n\n"
-            f"Ignore any external knowledge and focus solely on the context above.\n"
+            f"You are an expert assistant. Answer the following question based on the provided context.\n"
+            f"You should only answer questions related to RSTMH Early Career Grants Programme.\n"
+            f"If user asks questions unrelating to RSTMH Early Career Grants Programme, Politely inform user you can only answer question relating to RSTMH Early Career Grants Programme.\n"
+            f"Context:\n{context}\n"            
             f"Question: {user_query}\n"
             f"Answer:"
         )
