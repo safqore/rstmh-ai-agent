@@ -3,15 +3,29 @@ from app.services.qdrant_service import list_collections, search_with_fallback
 
 def test_list_collections(mock_qdrant):
     # Mock the Qdrant collection response
-    mock_qdrant.get_collections.return_value.collections = [
-        {"name": "test_collection", "points_count": 5}  # Use a dictionary instead of MagicMock
-    ]
+    mock_collection = MagicMock()
+    mock_collection.name = "test_collection"
+    mock_collection.points_count = 5
 
+    mock_qdrant.get_collections.return_value.collections = [mock_collection]
+
+    # Mock the get_collection method to return valid collection info
+    mock_qdrant.get_collection.return_value.config.params.vectors.size = 128
+    mock_qdrant.get_collection.return_value.config.params.vectors.distance = "Cosine"
+    mock_qdrant.get_collection.return_value.points_count = 5
+
+    # Call the function
     collections = list_collections()
+
+    # Debugging
+    print("[DEBUG] List collections output:", collections)
 
     # Validate the mock response
     assert len(collections) == 1
     assert collections[0]["name"] == "test_collection"
+    assert collections[0]["vector_size"] == 128
+    assert collections[0]["distance_metric"] == "Cosine"
+    assert collections[0]["points_count"] == 5
 
 def test_search_with_fallback(mock_qdrant):
     # Mock FAQ collection search results
