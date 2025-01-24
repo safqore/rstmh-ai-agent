@@ -12,6 +12,7 @@ import uuid
 from dotenv import load_dotenv
 from openai import OpenAI
 from qdrant_client.http import models
+from toxicity_checker import ToxicityChecker
 
 app = Flask(__name__, static_folder='../frontend', template_folder='../frontend')
 # app.static_folder = '../cdn'  # Serve static files from the cdn folder
@@ -146,6 +147,12 @@ def query_pdf():
             print("[DEBUG] Query is empty or missing.")
             return jsonify({"error": "Query cannot be empty"}), 400
 
+        # Check for toxic content
+        is_toxic, categories = ToxicityChecker.check_toxicity(user_query)
+        if is_toxic:
+            print(f"[DEBUG] Query flagged as toxic: {categories}")
+            return jsonify({"answer": "Your query contains inappropriate content and cannot be processed."})
+
         # Generate embedding (vector) for the user query
         print("[DEBUG] Generating embedding for user query.")
         query_vector = embedder.encode([user_query])[0].tolist()
@@ -215,6 +222,11 @@ def query_pdf():
             source_pdf=source,
             metadata={"ip": request.remote_addr, "user_agent": request.headers.get("User-Agent")}
         )
+
+        is_toxic, categories = ToxicityChecker.check_toxicity(llm_reply)
+        if is_toxic:
+            print(f"[DEBUG] Response flagged as toxic: {categories}")
+            return jsonify({"answer": "The generated response was flagged as inappropriate. Please try again."})
 
         return jsonify({
             "query": user_query,
