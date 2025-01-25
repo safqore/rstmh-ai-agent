@@ -35,4 +35,5 @@ def test_query_endpoint(client, mock_supabase, mock_qdrant):
 
     # Assertions
     assert response.status_code == 200
-    assert "Python is a programming language." in response.json["context"]
+    assert "Question: What is Python?\nAnswer: Python is a programming language.\nScore: 0.95" in response.json["context"]
+    assert response.json["source"] == "faq_vectors"

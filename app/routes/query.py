@@ -1,7 +1,8 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from app.services.qdrant_service import search_with_fallback
 from app.services.embedding_service import generate_embedding
 from app.services.supabase_logging import SupabaseLogger
+from app.services.llm_service import get_llm_response
 from dotenv import load_dotenv
 from flask import Blueprint, render_template, current_app
 import uuid
@@ -35,6 +36,7 @@ def query_pdf():
         # Retrieve user ID and session ID from headers or generate new ones
         user_id = request.headers.get("X-User-ID", str(uuid.uuid4()))
         session_id = request.headers.get("X-Session-ID", str(uuid.uuid4()))
+        print(f"[DEBUG]: user_id: {user_id} \n session_id: {session_id}")
 
         # Extract user query from the JSON payload
         data = request.json
@@ -75,6 +77,11 @@ def query_pdf():
         # Combine the chunks for context
         context = "\n\n".join(relevant_chunks)
 
+        llm_reply = get_llm_response(query=user_query,context=context)
+
+        # Ensure session exists
+        session_id=logger.get_or_create_session(user_id=user_id, session_id=session_id)
+
         # Log the interaction
         logger.log_interaction(
             user_id=user_id,
@@ -90,9 +97,11 @@ def query_pdf():
 
         return jsonify({
             "query": user_query,
+            "answer": llm_reply,
             "context": relevant_chunks,
             "source": source_collection
         })
 
     except Exception as e:
+        current_app.logger.error("Error during query processing: %s", str(e), exc_info=True)
         return jsonify({"error": f"Internal server error: {str(e)}"}), 500
