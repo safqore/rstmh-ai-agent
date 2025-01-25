@@ -518,9 +518,8 @@
         let user_id = localStorage.getItem('user_id');
         let session_id = localStorage.getItem('session_id');
         
-        // Send user message to the backend proxy instead of Hugging Face directly
-        const response = await fetch('https://rsmth-test-bot.onrender.com/query', {
-        // const response = await fetch('http://127.0.0.1:5005/query', {
+        // Send user message to the backend dynamically using BASE_URL
+        const response = await fetch(`${BASE_URL}/query`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

@@ -13,12 +13,10 @@
     </p>
 
     <!-- Scripts -->
-    <!-- <script src="{{ script_base_url }}/huggingface.js" defer></script>
-    <script src="{{ script_base_url }}/chat-widget.js" defer></script> -->
-    
-
-    <script src="/cdn/huggingface.js" defer></script>
-    <script src="/cdn/chat-widget.js" defer></script>
+    <script>
+        const BASE_URL = "{{ base_url }}";
+    </script>
+    <script src="{{ script_base_url }}/chat-widget.js" defer></script>
 
    </body>
 </html>
