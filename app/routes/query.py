@@ -3,6 +3,7 @@ from app.services.qdrant_service import search_with_fallback
 from app.services.embedding_service import generate_embedding
 from app.services.supabase_logging import SupabaseLogger
 from app.services.llm_service import get_llm_response
+from app.services.toxicity_checker_service import ToxicityChecker
 from dotenv import load_dotenv
 from flask import Blueprint, render_template, current_app
 import uuid
@@ -46,6 +47,12 @@ def query_pdf():
         user_query = data["user_query"]
         if not user_query.strip():
             return jsonify({"error": "Query cannot be empty."}), 400
+        
+        # Check for toxic content
+        is_toxic, categories = ToxicityChecker.check_toxicity(user_query)
+        if is_toxic:
+            print(f"[DEBUG] Query flagged as toxic: {categories}")
+            return jsonify({"answer": "Your query contains inappropriate content and cannot be processed."})
 
         # Generate embedding (vector) for the query
         query_vector = generate_embedding(user_query)
