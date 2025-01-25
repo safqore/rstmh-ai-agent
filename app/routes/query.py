@@ -39,7 +39,7 @@ def index():
     return render_template("index.html", script_base_url=script_base_url, base_url=base_url)
 
 @query_bp.route("/query", methods=["POST"])
-def query_pdf():
+def query_handler():
     try:
         # Retrieve user ID and session ID from headers or generate new ones
         user_id = request.headers.get("X-User-ID", str(uuid.uuid4()))
@@ -51,9 +51,9 @@ def query_pdf():
         if not data or "user_query" not in data:
             return jsonify({"error": "Invalid or missing JSON payload."}), 400
 
-        user_query = data["user_query"]
+        user_query = data.get("user_query", "").strip()
         if not user_query.strip():
-            return jsonify({"error": "Query cannot be empty."}), 400
+            return jsonify({"error": "Query cannot be empty.", "error_code": "EMPTY_QUERY"}), 400
         
         # Check for toxic content
         is_toxic, categories = ToxicityChecker.check_toxicity(user_query)
@@ -101,7 +101,7 @@ def query_pdf():
             user_id=user_id,
             session_id=session_id,
             prompt=user_query,
-            response=context,
+            response=llm_reply,
             source_pdf=source_collection,
             metadata={
                 "ip": request.remote_addr,
