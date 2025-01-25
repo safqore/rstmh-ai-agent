@@ -3,7 +3,6 @@ from qdrant_client.http import models
 from dotenv import load_dotenv
 import os
 
-os.environ.clear()
 # Get the directory of the current file
 current_dir = os.path.dirname(os.path.abspath(__file__))
 # Construct the path to the .env file

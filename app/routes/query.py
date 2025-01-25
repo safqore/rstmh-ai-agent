@@ -30,7 +30,6 @@ def index():
         else "https://rsmth-test-bot-cdn.onrender.com"  # External for production
     )
     
-    
     base_url = (
         f"http://127.0.0.1:{PORT}"
         if current_app.config.get("ENV") == "development"
