@@ -12,10 +12,11 @@
         Embed the following code to use this chat bot on your website: <pre>&lt;script src=&quot;https://rsmth-test-bot-cdn.onrender.com/chat-widget.js&quot; defer&gt;&lt;/script&gt;</pre>
     </p>
 
-    <!-- Internal -->
-    <!-- <script src="/cdn/chat-widget.js" defer></script> -->
-    
-    <!-- External -->
-    <script src="https://rsmth-test-bot-cdn.onrender.com/chat-widget.js" defer></script>
-</body>
+    <!-- Scripts -->
+    <script>
+        const BASE_URL = "{{ base_url }}";
+    </script>
+    <script src="{{ script_base_url }}/chat-widget.js" defer></script>
+
+   </body>
 </html>
