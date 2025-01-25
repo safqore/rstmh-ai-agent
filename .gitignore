@@ -70,8 +70,6 @@ Desktop.ini
 # pdfs
 *.pdf
 
-# txt files
-*.txt
 .devcontainer/devcontainer.json
 docker-compose.yml
 Dockerfile
