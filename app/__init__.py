@@ -4,7 +4,7 @@ import os
 
 def create_app():
     # Create the Flask app
-    app = Flask(__name__, static_folder="../static", template_folder="../frontend")
+    app = Flask(__name__, static_folder="../app/static", template_folder="../app/templates")
     app.config["ENV"] = os.getenv("FLASK_ENV", "production")  # Defaults to 'production'
 
     # Enable CORS

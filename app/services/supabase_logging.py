@@ -125,3 +125,17 @@ class SupabaseLogger:
         except Exception as e:
             print(f"[ERROR] Error creating session in Supabase: {e}")
             raise
+
+    def get_total_sessions(self):
+        """Fetch total session count."""
+        result = self.supabase.table("sessions").select("id", count="exact").execute()
+        if result.data:
+            return result.count
+        return 0
+
+    def get_total_users(self):
+        """Fetch total unique user count."""
+        result = self.supabase.table("sessions").select("user_id", count="exact", distinct=True).execute()
+        if result.data:
+            return result.count
+        return 0

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css" />
+  </head>
+  <body>
+    <div class="dashboard">
+      <h1>Application Dashboard</h1>
+      <div class="metrics">
+        <div class="metric">
+          <h2>Total Sessions</h2>
+          <p id="total-sessions">Loading...</p>
+        </div>
+        <div class="metric">
+          <h2>Total Users</h2>
+          <p id="total-users">Loading...</p>
+        </div>
+      </div>
+    </div>
+    <script>
+      // Fetch data from the backend API
+      fetch("/api/dashboard-data")
+        .then((response) => response.json())
+        .then((data) => {
+          document.getElementById("total-sessions").innerText =
+            data.sessions || "0";
+          document.getElementById("total-users").innerText = data.users || "0";
+        })
+        .catch((err) => {
+          console.error("Failed to fetch dashboard data", err);
+          document.getElementById("total-sessions").innerText = "Error";
+          document.getElementById("total-users").innerText = "Error";
+        });
+    </script>
+  </body>
+</html>
