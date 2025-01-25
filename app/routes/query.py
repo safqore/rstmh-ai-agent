@@ -109,6 +109,12 @@ def query_handler():
             }
         )
 
+        # check llm reply for toxicity
+        is_toxic, categories = ToxicityChecker.check_toxicity(llm_reply)
+        if is_toxic:
+            print(f"[DEBUG] Response flagged as toxic: {categories}")
+            llm_reply = "The generated response was flagged as inappropriate. Please try again."
+
         return jsonify({
             "query": user_query,
             "answer": llm_reply,
