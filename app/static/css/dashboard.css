@@ -1,0 +1,44 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f4;
+}
+
+.dashboard {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard h1 {
+  text-align: center;
+  color: #333;
+}
+
+.metrics {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 20px;
+}
+
+.metric {
+  text-align: center;
+  padding: 10px 20px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.metric h2 {
+  color: #555;
+}
+
+.metric p {
+  font-size: 24px;
+  font-weight: bold;
+  color: #000;
+}
