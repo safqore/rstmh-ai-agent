@@ -1,6 +1,7 @@
 # rstmh-ai-agent
 
 ![MIT License](https://img.shields.io/badge/license-MIT-blue)
+[![Netlify Status](https://api.netlify.com/api/v1/badges/fad834be-b269-4862-9d81-dd9e5fb0c540/deploy-status)](https://app.netlify.com/sites/rstmh-ai-agent/deploys)
 
 rstmh-ai-agent is a document-processing bot that accepts documents from various clients and provides answers to questions based on the content of those documents. It utilizes natural language processing (NLP) to extract, analyze, and respond to user queries accurately.
 
