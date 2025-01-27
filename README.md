@@ -1,8 +1,8 @@
-# rsmth-test-bot
+# rstmh-ai-agent
 
 ![MIT License](https://img.shields.io/badge/license-MIT-blue)
 
-rsmth-test-bot is a document-processing bot that accepts documents from various clients and provides answers to questions based on the content of those documents. It utilizes natural language processing (NLP) to extract, analyze, and respond to user queries accurately.
+rstmh-ai-agent is a document-processing bot that accepts documents from various clients and provides answers to questions based on the content of those documents. It utilizes natural language processing (NLP) to extract, analyze, and respond to user queries accurately.
 
 ## Prerequisites
 
