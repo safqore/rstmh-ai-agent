@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dashboard</title>
-    <link rel="stylesheet" href="/static/css/dashboard.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
   </head>
   <body>
     <div class="dashboard">
@@ -20,30 +20,15 @@
         </div>
       </div>
     </div>
-    <!-- JavaScript to fetch data -->
-    <script>
-      fetch("/dashboard/api/dashboard-data")
-        .then((response) => {
-          console.log("Raw Response:", response);
-          return response.json();
-        })
-        .then((data) => {
-          console.log("API Response:", data);
-          if (response.ok) {
-            document.getElementById("total-sessions").innerText =
-              data.sessions ?? "Error";
-            document.getElementById("total-users").innerText =
-              data.users ?? "Error";
-          } else {
-            document.getElementById("total-sessions").innerText = "Error";
-            document.getElementById("total-users").innerText = "Error";
-          }
-        })
-        .catch((error) => {
-          console.error("Error fetching dashboard data:", error);
-          document.getElementById("total-sessions").innerText = "Error";
-          document.getElementById("total-users").innerText = "Error";
-        });
-    </script>
+    <!-- Modal for session details -->
+    <div id="session-modal" class="modal">
+      <div class="modal-content">
+          <span class="close" id="close-modal">&times;</span>
+          <h3>Session Details</h3>
+          <ul id="session-details-list"></ul>
+      </div>
+  </div>
+    <!-- Include dashboard.js -->
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}" defer></script>
   </body>
 </html>

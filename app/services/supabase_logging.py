@@ -20,13 +20,13 @@ class SupabaseLogger:
         Initialize the Supabase logger. Allows for dependency injection of a mocked client.
         """
         if supabase_client:
-            self.supabase = supabase_client
+            self.client = supabase_client
         else:
             url = os.getenv("SUPABASE_URL")
             key = os.getenv("SUPABASE_KEY")
             if not url or not key:
                 raise ValueError("Supabase URL and API key must be set in environment variables.")
-            self.supabase: Client = create_client(url, key)
+            self.client: Client = create_client(url, key)
 
     def log_interaction(self, user_id, session_id, prompt, response, source_pdf=None, section_reference=None, metadata=None):
         """
@@ -127,10 +127,12 @@ class SupabaseLogger:
             raise
 
     def get_total_sessions(self):
-        """Fetch total session count."""
+        """
+        Fetch the total number of sessions from the Supabase database.
+        """
         try:
             print("[DEBUG] Fetching total sessions...")
-            # Use Supabase's `rpc()` for custom PostgREST functions
+            # Call the 'count_sessions' Postgres function
             result = self.client.rpc("count_sessions").execute()
             if result.data:
                 return result.data[0]["count"]
@@ -140,14 +142,31 @@ class SupabaseLogger:
             raise
 
     def get_total_users(self):
-        """Fetch total unique user count."""
+        """
+        Fetch the total number of distinct users from the Supabase database.
+        """
         try:
-            print("[DEBUG] Fetching total sessions...")
-            # Use Supabase's `rpc()` for custom PostgREST functions
-            result = self.client.rpc("count_sessions").execute()
+            print("[DEBUG] Fetching total users...")
+            # Call the 'count_distinct_users' Postgres function
+            result = self.client.rpc("count_distinct_users").execute()
             if result.data:
                 return result.data[0]["count"]
             return 0
         except Exception as e:
-            print("[ERROR] Failed to fetch sessions:", e)
-            raise                   
+            print("[ERROR] Failed to fetch users:", e)
+            raise
+
+    def get_session_details(self, session_id=None):
+        """
+        Fetch detailed information about sessions from Supabase.
+        If session_id is provided, fetch details for that specific session.
+        """
+        try:
+            query = self.client.table("interactions").select("session_id, prompt, response, timestamp")
+            if session_id:
+                query = query.eq("session_id", session_id)
+            data = query.execute().data
+            return data
+        except Exception as e:
+            current_app.logger.error("Failed to fetch session details: %s", str(e))
+            raise
