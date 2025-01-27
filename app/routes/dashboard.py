@@ -5,7 +5,7 @@ dashboard_bp = Blueprint("dashboard", __name__)
 
 logger = SupabaseLogger()
 
-@dashboard_bp.route("/dashboard", methods=["GET"])
+@dashboard_bp.route("/", methods=["GET"])
 def dashboard_page():
     """Render the dashboard page."""
     return render_template("dashboard.html")

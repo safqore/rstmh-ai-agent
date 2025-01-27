@@ -20,17 +20,27 @@
         </div>
       </div>
     </div>
+    <!-- JavaScript to fetch data -->
     <script>
-      // Fetch data from the backend API
-      fetch("/api/dashboard-data")
-        .then((response) => response.json())
-        .then((data) => {
-          document.getElementById("total-sessions").innerText =
-            data.sessions || "0";
-          document.getElementById("total-users").innerText = data.users || "0";
+      fetch("/dashboard/api/dashboard-data")
+        .then((response) => {
+          console.log("Raw Response:", response);
+          return response.json();
         })
-        .catch((err) => {
-          console.error("Failed to fetch dashboard data", err);
+        .then((data) => {
+          console.log("API Response:", data);
+          if (response.ok) {
+            document.getElementById("total-sessions").innerText =
+              data.sessions ?? "Error";
+            document.getElementById("total-users").innerText =
+              data.users ?? "Error";
+          } else {
+            document.getElementById("total-sessions").innerText = "Error";
+            document.getElementById("total-users").innerText = "Error";
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching dashboard data:", error);
           document.getElementById("total-sessions").innerText = "Error";
           document.getElementById("total-users").innerText = "Error";
         });

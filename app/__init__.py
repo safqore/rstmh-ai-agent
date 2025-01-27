@@ -17,6 +17,6 @@ def create_app():
 
     app.register_blueprint(query_bp)
     app.register_blueprint(static_bp)
-    app.register_blueprint(dashboard_bp)
+    app.register_blueprint(dashboard_bp, url_prefix="/dashboard")
 
     return app

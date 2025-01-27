@@ -128,14 +128,26 @@ class SupabaseLogger:
 
     def get_total_sessions(self):
         """Fetch total session count."""
-        result = self.supabase.table("sessions").select("id", count="exact").execute()
-        if result.data:
-            return result.count
-        return 0
+        try:
+            print("[DEBUG] Fetching total sessions...")
+            # Use Supabase's `rpc()` for custom PostgREST functions
+            result = self.client.rpc("count_sessions").execute()
+            if result.data:
+                return result.data[0]["count"]
+            return 0
+        except Exception as e:
+            print("[ERROR] Failed to fetch sessions:", e)
+            raise
 
     def get_total_users(self):
         """Fetch total unique user count."""
-        result = self.supabase.table("sessions").select("user_id", count="exact", distinct=True).execute()
-        if result.data:
-            return result.count
-        return 0
+        try:
+            print("[DEBUG] Fetching total sessions...")
+            # Use Supabase's `rpc()` for custom PostgREST functions
+            result = self.client.rpc("count_sessions").execute()
+            if result.data:
+                return result.data[0]["count"]
+            return 0
+        except Exception as e:
+            print("[ERROR] Failed to fetch sessions:", e)
+            raise                   
