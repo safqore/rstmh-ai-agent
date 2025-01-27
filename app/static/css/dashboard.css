@@ -77,3 +77,8 @@ body {
   text-decoration: none;
   cursor: pointer;
 }
+
+/* Change cursor to pointer for clickable elements */
+.clickable {
+  cursor: pointer;
+}

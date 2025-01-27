@@ -156,6 +156,9 @@ document.getElementById("total-sessions").addEventListener("click", () => {
 
             data.sessions.forEach((session) => {
                 const item = document.createElement("li");
+                item.className = "clickable"; // Add the clickable class
+                item.textContent = `Session ID: ${session.session_id}, Total Questions: ${session.question_count}`;
+    
                 item.innerHTML = `
                     <strong>Session ID:</strong> ${session.session_id} <br>
                     <strong>User ID:</strong> ${session.user_id} <br>
@@ -163,6 +166,9 @@ document.getElementById("total-sessions").addEventListener("click", () => {
                     <strong>Timestamp:</strong> ${session.timestamp}
                     <button onclick="fetchSessionDetails('${session.session_id}')">View Details</button>
                 `;
+                item.onclick = () => {
+                    openDetailsModal(session.session_id);
+                };
                 sessionList.appendChild(item);
             });
 
