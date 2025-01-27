@@ -1,12 +1,17 @@
 from app import create_app
 from dotenv import load_dotenv
 import os
+import logging
 
 # Load environment variables
 load_dotenv()
 
 # Create the Flask application
 app = create_app()
+
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
 

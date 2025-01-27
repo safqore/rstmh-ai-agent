@@ -1,5 +1,6 @@
 import os
 import uuid
+import logging
 from datetime import datetime, timezone, timedelta
 from supabase import create_client, Client
 from dotenv import load_dotenv
@@ -19,6 +20,7 @@ class SupabaseLogger:
         """
         Initialize the Supabase logger. Allows for dependency injection of a mocked client.
         """
+        self.logger = logging.getLogger(__name__)
         if supabase_client:
             self.client = supabase_client
         else:
@@ -156,17 +158,126 @@ class SupabaseLogger:
             print("[ERROR] Failed to fetch users:", e)
             raise
 
-    def get_session_details(self, session_id=None):
+    def get_session_details(self, session_id, limit=10, offset=0, start_date=None, end_date=None, user_id=None, search_query=None):
         """
-        Fetch detailed information about sessions from Supabase.
-        If session_id is provided, fetch details for that specific session.
+        Fetch session details from the database.
+
+        :param session_id: ID of the session to fetch details for
+        :param limit: Number of records to fetch (default: 10)
+        :param offset: Offset for pagination (default: 0)
+        :param start_date: Filter interactions after this date
+        :param end_date: Filter interactions before this date
+        :param user_id: Filter interactions by user ID
+        :param search_query: Search interactions by prompt content
+        :return: A tuple (details, total_count)
         """
         try:
-            query = self.client.table("interactions").select("session_id, prompt, response, timestamp")
-            if session_id:
-                query = query.eq("session_id", session_id)
-            data = query.execute().data
-            return data
+            query = self.client.table("interactions").select("*").eq("session_id", session_id)
+
+            # Apply optional filters
+            if start_date:
+                query = query.gte("timestamp", start_date)
+            if end_date:
+                query = query.lte("timestamp", end_date)
+            if user_id:
+                query = query.eq("user_id", user_id)
+            if search_query:
+                query = query.ilike("prompt", f"%{search_query}%")
+
+            # Add pagination
+            query = query.range(offset, offset + limit - 1)
+
+            response = query.execute()
+
+            # Debug: Print the response object
+            print(f"[DEBUG] Supabase response: {response}")
+            print(f"[DEBUG] Supabase response.data: {response.data}")
+
+            # Check if the response contains data
+            if not response.data:
+                raise Exception("Supabase query returned no data.")
+
+            details = response.data
+            total_count = len(details)  # Replace with total count logic if available
+            return details, total_count
         except Exception as e:
-            current_app.logger.error("Failed to fetch session details: %s", str(e))
-            raise
+            print(f"[ERROR] Failed to fetch session details: {str(e)}")
+            raise Exception(f"Failed to fetch session details: {str(e)}")
+
+    def get_filtered_session_details(self, session_id, start_date=None, end_date=None, user_id=None, search_query="", limit=10, offset=0):
+        query = self.client.table("interactions").select("*").eq("session_id", session_id)
+
+        if start_date:
+            query = query.gte("timestamp", start_date)
+        if end_date:
+            query = query.lte("timestamp", end_date)
+        if user_id:
+            query = query.eq("user_id", user_id)
+        if search_query:
+            query = query.ilike("prompt", f"%{search_query}%")
+
+        query = query.range(offset, offset + limit - 1)
+        return query.execute().data
+
+    def get_filtered_session_count(self, session_id, start_date=None, end_date=None, user_id=None, search_query=""):
+        query = self.client.table("interactions").select("id", count="exact").eq("session_id", session_id)
+
+        if start_date:
+            query = query.gte("timestamp", start_date)
+        if end_date:
+            query = query.lte("timestamp", end_date)
+        if user_id:
+            query = query.eq("user_id", user_id)
+        if search_query:
+            query = query.ilike("prompt", f"%{search_query}%")
+
+        return query.execute().count
+    
+    def get_sessions(self, limit=10, offset=0):
+        """
+        Fetch a paginated list of sessions from the database.
+        """
+        try:
+            query = self.client.table("sessions").select("*").range(offset, offset + limit - 1)
+            response = query.execute()
+
+            if response.error:
+                raise Exception(f"Supabase query failed: {response.error}")
+
+            return response.data, len(response.data)  # Adjust if total count logic is available
+        except Exception as e:
+            raise Exception(f"Failed to fetch sessions: {str(e)}")
+
+    def get_sessions_with_filters(self, search_query="", limit=10, offset=0):
+        """
+        Fetch sessions with optional filters and pagination.
+
+        :param search_query: Search term to filter by question content
+        :param limit: Number of sessions to fetch (default: 10)
+        :param offset: Offset for pagination (default: 0)
+        :return: A tuple (sessions, total_count)
+        """
+        try:
+            query = (
+                self.client.table("interactions")
+                .select("session_id, count(id) as question_count")
+                .group_by("session_id")
+            )
+
+            # Apply search filter
+            if search_query:
+                query = query.ilike("prompt", f"%{search_query}%")
+
+            # Add pagination
+            query = query.range(offset, offset + limit - 1)
+
+            response = query.execute()
+
+            if response.error:
+                raise Exception(f"Supabase query failed: {response.error}")
+
+            sessions = response.data
+            total_count = len(sessions)  # Replace with actual count if available
+            return sessions, total_count
+        except Exception as e:
+            raise Exception(f"Failed to fetch sessions: {str(e)}")     

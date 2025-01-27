@@ -20,13 +20,81 @@
         </div>
       </div>
     </div>
-    <!-- Modal for session details -->
-    <div id="session-modal" class="modal">
-      <div class="modal-content">
-          <span class="close" id="close-modal">&times;</span>
-          <h3>Session Details</h3>
-          <ul id="session-details-list"></ul>
+    <!-- Sessions Modal -->
+<div id="session-modal" class="modal">
+  <div class="modal-content">
+      <span id="close-session-modal" class="close">&times;</span>
+      <h2>All Sessions</h2>
+
+      <div>
+          <input type="text" id="search-query" placeholder="Search by question">
+          <button id="apply-session-filters">Search</button>
       </div>
+
+      <ul id="session-list"></ul>
+      <div id="pagination-controls"></div>
+  </div>
+</div>
+  
+  <div id="details-modal" class="modal">
+      <div class="modal-content">
+          <span id="close-details-modal" class="close">&times;</span>
+          <h2>Session Details</h2>
+          <table>
+              <thead>
+                  <tr>
+                      <th>Question</th>
+                      <th>Answer</th>
+                      <th>Timestamp</th>
+                  </tr>
+              </thead>
+              <tbody id="details-list"></tbody>
+          </table>
+      </div>
+  </div>
+    <!-- Modal for Viewing Session Details -->
+<div id="session-details-modal" class="modal">
+  <div class="modal-content">
+      <span class="close" id="close-modal">&times;</span>
+      <h3>Session Details</h3>
+
+      <!-- Filters -->
+      <div>
+          <label for="filter-start-date">Start Date:</label>
+          <input type="date" id="filter-start-date">
+
+          <label for="filter-end-date">End Date:</label>
+          <input type="date" id="filter-end-date">
+
+          <label for="filter-user-id">User ID:</label>
+          <input type="text" id="filter-user-id">
+
+          <label for="search-query">Search:</label>
+          <input type="text" id="search-query">
+
+          <button id="apply-filters">Apply Filters</button>
+      </div>
+
+      <!-- Table for Session Details -->
+      <table>
+          <thead>
+              <tr>
+                  <th>Question</th>
+                  <th>Answer</th>
+                  <th>Date</th>
+              </tr>
+          </thead>
+          <tbody id="details-table-body">
+              <!-- Data will be dynamically injected -->
+          </tbody>
+      </table>
+
+      <!-- Pagination Controls -->
+      <div id="pagination-controls">
+          <!-- Pagination buttons will be dynamically created -->
+      </div>
+  </div>
+</div>
   </div>
     <!-- Include dashboard.js -->
     <script src="{{ url_for('static', filename='js/dashboard.js') }}" defer></script>
