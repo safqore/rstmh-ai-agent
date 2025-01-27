@@ -19,7 +19,7 @@ logger = SupabaseLogger()
 
 FAQ_COLLECTION = "faq_vectors"
 DETAILS_COLLECTION = "details_vectors"
-PORT = os.getenv('PORT')  # get port
+PORT = os.getenv('PORT', 5000)  # get port
 
 @query_bp.route("/")
 def index():
@@ -33,7 +33,7 @@ def index():
     base_url = (
         f"http://127.0.0.1:{PORT}"
         if current_app.config.get("ENV") == "development"
-        else "https://rsmth-test-bot.onrender.com"
+        else "https://rstmh-ai-agent.netlify.app/"
     )
     print(f"[DEBUG]: script_base_url: {script_base_url}\nbase_url: {base_url}")
     return render_template("index.html", script_base_url=script_base_url, base_url=base_url)
