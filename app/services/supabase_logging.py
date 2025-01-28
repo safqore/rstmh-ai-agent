@@ -233,18 +233,26 @@ class SupabaseLogger:
 
         return query.execute().count
     
-    def get_sessions(self, limit=10, offset=0):
+    def get_sessions(self, limit=10, offset=0, search_query=""):
         """
-        Fetch a paginated list of sessions from the database.
+        Fetch session summaries with a count of questions.
+
+        :param limit: Number of records to fetch
+        :param offset: Offset for pagination
+        :param search_query: Filter sessions by search query
+        :return: A list of session summaries
         """
         try:
-            query = self.client.table("sessions").select("*").range(offset, offset + limit - 1)
-            response = query.execute()
+            response = self.client.rpc("get_session_summary", {
+                "limit_param": limit,
+                "offset_param": offset,
+                "search_query": search_query
+            }).execute()
 
             if response.error:
-                raise Exception(f"Supabase query failed: {response.error}")
+                raise Exception(f"Supabase RPC call failed: {response.error}")
 
-            return response.data, len(response.data)  # Adjust if total count logic is available
+            return response.data
         except Exception as e:
             raise Exception(f"Failed to fetch sessions: {str(e)}")
 
