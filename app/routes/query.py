@@ -27,13 +27,13 @@ def index():
     script_base_url = (
         f"http://127.0.0.1:{PORT}/cdn"  # Internal during local development
         if current_app.config.get("ENV") == "development"  # ENV should be set in your Flask app
-        else "https://rsmth-test-bot-cdn.onrender.com"  # External for production
+        else "https://rstmh-ai-agent.onrender.com"  # External for production
     )
     
     base_url = (
         f"http://127.0.0.1:{PORT}"
         if current_app.config.get("ENV") == "development"
-        else "https://rsmth-test-bot.onrender.com"
+        else "https://rstmh-ai-agent.onrender.com"
     )
     print(f"[DEBUG]: script_base_url: {script_base_url}\nbase_url: {base_url}")
     return render_template("index.html", script_base_url=script_base_url, base_url=base_url)
