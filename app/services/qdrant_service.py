@@ -10,7 +10,7 @@ env_path = os.path.join(current_dir, '../..', '.env')
 # Load the environment variables
 load_dotenv(dotenv_path=env_path)
 
-print(os.getenv('QDRANT_URL'), os.getenv('QD_API_TOKEN'))
+# print(os.getenv('QDRANT_URL'), os.getenv('QD_API_TOKEN'))
 
 # Initialize Qdrant client
 client = QdrantClient(
