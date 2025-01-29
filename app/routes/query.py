@@ -28,7 +28,7 @@ def get_base_urls():
     script_base_url = (
         f"http://127.0.0.1:{PORT}/cdn"  # Internal during local development
         if current_app.config.get("ENV") == "development"  # ENV should be set in your Flask app
-        else "https://rsmth-test-bot-cdn.onrender.com"  # External for production
+        else "https://rsmth-test-bot-cdn.onrender.com/cdn"  # External for production
     )
     base_url = (
         f"http://127.0.0.1:{PORT}"
