@@ -9,7 +9,7 @@ from flask import Blueprint, render_template, current_app
 import uuid
 import os
 
-os.environ.clear
+# os.environ.clear
 # Load environment variables
 load_dotenv()
 
