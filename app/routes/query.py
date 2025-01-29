@@ -9,6 +9,7 @@ from flask import Blueprint, render_template, current_app
 import uuid
 import os
 
+# os.environ.clear
 # Load environment variables
 load_dotenv()
 
@@ -19,24 +20,40 @@ logger = SupabaseLogger()
 
 FAQ_COLLECTION = "faq_vectors"
 DETAILS_COLLECTION = "details_vectors"
-PORT = os.getenv('PORT')  # get port
 
-@query_bp.route("/")
-def index():
-    # Use current_app instead of app
+# Load environment variables
+PORT = os.getenv('PORT', 5000)
+
+def get_base_urls():
+    """Utility function to compute script_base_url and base_url."""
     script_base_url = (
         f"http://127.0.0.1:{PORT}/cdn"  # Internal during local development
         if current_app.config.get("ENV") == "development"  # ENV should be set in your Flask app
-        else "https://rsmth-test-bot-cdn.onrender.com"  # External for production
+        else "https://rstmh-ai-agent-cdn.onrender.com"  # External for production
     )
-    
     base_url = (
         f"http://127.0.0.1:{PORT}"
         if current_app.config.get("ENV") == "development"
-        else "https://rsmth-test-bot.onrender.com"
+        else "https://rstmh-ai-agent.onrender.com"
     )
+    return script_base_url, base_url
+
+@query_bp.route("/")
+def index():
+    # Call the utility function to get the URLs
+    script_base_url, base_url = get_base_urls()
     print(f"[DEBUG]: script_base_url: {script_base_url}\nbase_url: {base_url}")
     return render_template("index.html", script_base_url=script_base_url, base_url=base_url)
+
+@query_bp.route("/debug")
+def debug():
+    # Call the same utility function to get the URLs
+    script_base_url, base_url = get_base_urls()
+    return jsonify({
+        "ENV": current_app.config.get("ENV"),
+        "script_base_url": script_base_url,
+        "base_url": base_url
+    })
 
 @query_bp.route("/query", methods=["POST"])
 def query_handler():

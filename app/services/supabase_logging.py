@@ -12,7 +12,7 @@ env_path = os.path.join(current_dir, '../..', '.env')
 # Load the environment variables
 load_dotenv(dotenv_path=env_path)
 
-print(f"[DEBUG]: {os.getenv('SUPABASE_URL')} and {os.getenv('SUPABASE_KEY')}")
+# print(f"[DEBUG]: {os.getenv('SUPABASE_URL')} and {os.getenv('SUPABASE_KEY')}")
 
 
 class SupabaseLogger:
