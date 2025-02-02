@@ -139,6 +139,8 @@ def query_handler():
             llm_reply = "The generated response was flagged as inappropriate. Please try again."
 
         return jsonify({
+            "user_id": user_id,
+            "session_id": session_id,
             "query": user_query,
             "answer": llm_reply,
             "context": relevant_chunks,
