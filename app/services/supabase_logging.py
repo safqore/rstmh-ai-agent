@@ -80,7 +80,7 @@ class SupabaseLogger:
                     print("[DEBUG] Last active timestamp:", last_active)
 
                     # If inactive for 15 minutes, create a new session
-                    if current_time - last_active > timedelta(minutes=15):
+                    if current_time.replace(tzinfo=None) - last_active > timedelta(minutes=15):
                         print("[DEBUG] Session inactive for more than 15 minutes. Creating new session.")
                         session_id = str(uuid.uuid4())
                         self._create_session(session_id, user_id, current_time)

@@ -18,6 +18,9 @@ query_bp = Blueprint('query', __name__)
 # Initialize Supabase logger
 logger = SupabaseLogger()
 
+# Initialize a dictionary to store chat history for each session
+chat_histories = {}
+
 FAQ_COLLECTION = "faq_vectors"
 DETAILS_COLLECTION = "details_vectors"
 
@@ -59,9 +62,18 @@ def debug():
 def query_handler():
     try:
         # Retrieve user ID and session ID from headers or generate new ones
-        user_id = request.headers.get("X-User-ID", str(uuid.uuid4()))
-        session_id = request.headers.get("X-Session-ID", str(uuid.uuid4()))
+        user_id = request.headers.get("X-User-ID")
+        if user_id in [None, 'null']:
+            user_id = str(uuid.uuid4())
+
+        session_id = request.headers.get("X-Session-ID")
+        if session_id in [None, 'null']:
+            session_id = str(uuid.uuid4())
+
         print(f"[DEBUG]: user_id: {user_id} \n session_id: {session_id}")
+
+        # Retrieve or initialize chat history for the session
+        chat_history = chat_histories.get(session_id, "")
 
         # Extract user query from the JSON payload
         data = request.json
@@ -108,7 +120,12 @@ def query_handler():
         # Combine the chunks for context
         context = "\n\n".join(relevant_chunks)
 
-        llm_reply = get_llm_response(query=user_query,context=context)
+        # Get LLM response with chat history
+        llm_reply = get_llm_response(query=user_query, context=context, chat_history=chat_history)
+
+        # Update chat history
+        chat_history += f"User: {user_query}\nAssistant: {llm_reply}\n"
+        chat_histories[session_id] = chat_history
 
         # Ensure session exists
         session_id=logger.get_or_create_session(user_id=user_id, session_id=session_id)
@@ -133,6 +150,8 @@ def query_handler():
             llm_reply = "The generated response was flagged as inappropriate. Please try again."
 
         return jsonify({
+            "user_id": user_id,
+            "session_id": session_id,
             "query": user_query,
             "answer": llm_reply,
             "context": relevant_chunks,

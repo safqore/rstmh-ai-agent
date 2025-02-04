@@ -12,13 +12,14 @@ load_dotenv(dotenv_path=env_path)
 
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-def get_llm_response(query, context):
+def get_llm_response(query, context, chat_history):
     print(f"[DEBUG] Context for LLM: {context[:200]}...")
     prompt = (
         f"You are a knowledgeable and helpful assistant focused on the RSTMH Early Career Grants Programme. "
-        f"Use the provided context to answer questions as accurately as possible. "
+        f"Use the provided context and chat history to answer questions as accurately as possible. "
         f"If a question is slightly outside the context but related to grants, research, or funding, do your best to provide helpful information based on your expertise. "
         f"If a question is completely unrelated to the RSTMH Early Career Grants Programme or grants in general, politely inform the user of your limitations.\n"
+        f"Chat History:\n{chat_history}\n"
         f"Context:\n{context}\n"
         f"Question: {query}\n"
         f"Answer:"
