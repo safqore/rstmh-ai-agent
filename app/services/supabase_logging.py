@@ -1,6 +1,6 @@
 import os
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 from supabase import create_client, Client
 from dotenv import load_dotenv
 
@@ -45,7 +45,7 @@ class SupabaseLogger:
         data = {
             "user_id": user_id,
             "session_id": session_id,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now().isoformat(),
             "prompt": prompt,
             "response": response,
             "source_pdf": source_pdf,
@@ -65,7 +65,7 @@ class SupabaseLogger:
         """
         Retrieve or create a session in the `sessions` table.
         """
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now()
         print("[DEBUG] Current time:", current_time)
     
         if session_id:
@@ -80,7 +80,7 @@ class SupabaseLogger:
                     print("[DEBUG] Session created_at timestamp:", created_at)
     
                     # If the session is older than 6 hours, create a new session
-                    if current_time.replace(tzinfo=None) - created_at > timedelta(hours=6):
+                    if current_time - created_at > timedelta(hours=6):
                         print("[DEBUG] Session older than 6 hours. Creating new session.")
                         session_id = str(uuid.uuid4())
                         self._create_session(session_id, user_id, current_time)
