@@ -1,22 +1,99 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Example Web Page with Safqore AI Chat Bot</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RSTMH Grants AI Agent</title>
+
+  <!-- Example: Load a Google Font that’s close to RSTMH’s look -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link 
+    href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap" 
+    rel="stylesheet"
+  >
+
+  <style>
+    /* Approximate RSTMH color palette */
+    :root {
+      --rstmh-teal: #005C5C;   /* Dark teal for header, headings */
+      --rstmh-light-teal: #00A2A2; /* Lighter accent teal, if needed */
+      --text-color: #333;     /* Dark text color */
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Open Sans', Arial, sans-serif;
+      color: var(--text-color);
+      line-height: 1.5;
+    }
+
+    /* Header to mimic the RSTMH brand color at top */
+    header {
+      background-color: var(--rstmh-teal);
+      color: #fff;
+      padding: 1rem;
+    }
+
+    /* Wrap content in a centered container */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 1.75rem;
+      color: var(--rstmh-teal);
+    }
+
+    p {
+      font-size: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    /* You could optionally style links, footers, etc. */
+    a {
+      color: var(--rstmh-teal);
+      text-decoration: none;
+      font-weight: 600;
+    }
+  </style>
 </head>
 <body>
 
-    <h1>Example web page with Safqore AI Chat Bot</h1>
+  <!-- Simple header bar -->
+  <header>
+    <div class="container">
+      <h2>RSTMH Early Career Grants</h2>
+    </div>
+  </header>
+
+  <!-- Main content area -->
+  <div class="container">
+    <h1>Safqore AI Chat Agent for the RSTMH Grants Programme</h1>
     <p>
-        Embed the following code to use this chat bot on your website: <pre>&lt;script src=&quot;https://rstmh-ai-agent-cdn.onrender.com/chat-widget.js&quot; defer&gt;&lt;/script&gt;</pre>
+      This page hosts the RSTMH AI Agent, which is here to answer any queries you may have regarding the RSTMH Early Career Grants Programme—covering eligibility criteria, application processes, budget guidelines, reporting requirements, and more.
     </p>
 
-    <!-- Scripts -->
+    <!-- If you want to show how to embed the chatbot on their site, uncomment this: 
+    <p>
+      Embed the following code to use this chat bot on RSTMH’s website to activate the agent:
+      <pre>&lt;script src="https://rsmth-test-bot-cdn.onrender.com/chat-widget.js" defer&gt;&lt;/script&gt;</pre>
+    </p>
+    -->
+
+    <!-- Safqore AI Agent Scripts -->
     <script>
-        const BASE_URL = "{{ base_url }}";
+      const BASE_URL = "{{ base_url }}";
     </script>
     <script src="{{ script_base_url }}/chat-widget.js" defer></script>
+  </div>
 
-   </body>
+</body>
 </html>

@@ -78,11 +78,16 @@ class SupabaseLogger:
             if result.data:
                 session = result.data[0]
                 try:
-                    last_active = datetime.fromisoformat(session["last_active"])
+                    # Handle timestamp inconsistencies
+                    try:
+                        last_active = datetime.strptime(session["last_active"], "%Y-%m-%dT%H:%M:%S.%f")
+                    except ValueError:
+                        last_active = datetime.strptime(session["last_active"] + "0", "%Y-%m-%dT%H:%M:%S.%f")
+
                     print("[DEBUG] Last active timestamp:", last_active)
 
                     # If inactive for 15 minutes, create a new session
-                    if current_time - last_active > timedelta(minutes=15):
+                    if current_time.replace(tzinfo=None) - last_active > timedelta(minutes=15):
                         print("[DEBUG] Session inactive for more than 15 minutes. Creating new session.")
                         session_id = str(uuid.uuid4())
                         self._create_session(session_id, user_id, current_time)
@@ -90,7 +95,7 @@ class SupabaseLogger:
                         # Update the `last_active` timestamp
                         print("[DEBUG] Updating last_active for existing session.")
                         self.supabase.table("sessions").update({
-                            "last_active": current_time.isoformat()
+                            "last_active": current_time.isoformat(timespec="microseconds")
                         }).eq("session_id", session_id).execute()
                         print("[DEBUG] Updated last_active for session:", session_id)
                 except Exception as e:
@@ -118,11 +123,9 @@ class SupabaseLogger:
             self.supabase.table("sessions").insert({
                 "session_id": session_id,
                 "user_id": user_id,
-                "last_active": current_time.isoformat(),
-                "created_at": current_time.isoformat()
+                "last_active": current_time.isoformat(timespec="microseconds"),
+                "created_at": current_time.isoformat(timespec="microseconds")
             }).execute()
-
-
             print("[DEBUG] Created new session in Supabase.")
         except Exception as e:
             print(f"[ERROR] Error creating session in Supabase: {e}")
