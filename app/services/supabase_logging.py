@@ -1,6 +1,6 @@
 import os
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from supabase import create_client, Client
 from dotenv import load_dotenv
 
@@ -65,7 +65,7 @@ class SupabaseLogger:
         """
         Retrieve or create a session in the `sessions` table.
         """
-        current_time = datetime.now()
+        current_time = datetime.now(timezone.utc)
         print("[DEBUG] Current time:", current_time)
     
         if session_id:
@@ -76,6 +76,9 @@ class SupabaseLogger:
             if result.data:
                 session = result.data[0]
                 try:
+                    created_at = datetime.fromisoformat(session["created_at"])
+                    print("[DEBUG] Session created_at timestamp:", created_at)
+
                     # Handle timestamp inconsistencies
                     try:
                         last_active = datetime.strptime(session["last_active"], "%Y-%m-%dT%H:%M:%S.%f")
@@ -85,8 +88,8 @@ class SupabaseLogger:
                     print("[DEBUG] Last active timestamp:", last_active)
 
                     # If inactive for 15 minutes, create a new session
-                    if current_time.replace(tzinfo=None) - last_active > timedelta(minutes=15):
-                        print("[DEBUG] Session inactive for more than 15 minutes. Creating new session.")
+                    if current_time.replace(tzinfo=None) - created_at > timedelta(hours=6):
+                        print("[DEBUG] Session older than 6 hours. Creating new session.")
                         session_id = str(uuid.uuid4())
                         self._create_session(session_id, user_id, current_time)
                     else:
