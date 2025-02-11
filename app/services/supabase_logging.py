@@ -45,7 +45,7 @@ class SupabaseLogger:
         data = {
             "user_id": user_id,
             "session_id": session_id,
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "prompt": prompt,
             "response": response,
             "source_pdf": source_pdf,
@@ -87,7 +87,7 @@ class SupabaseLogger:
 
                     print("[DEBUG] Last active timestamp:", last_active)
 
-                    # If inactive for 15 minutes, create a new session
+                    # If the session is older than 6 hours, create a new session
                     if current_time.replace(tzinfo=None) - created_at > timedelta(hours=6):
                         print("[DEBUG] Session older than 6 hours. Creating new session.")
                         session_id = str(uuid.uuid4())
