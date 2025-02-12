@@ -3,100 +3,126 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <title>Application Dashboard</title>
+
+    <!-- Bootstrap 5 -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/dashboard.css') }}"
+    />
   </head>
   <body>
-    <div class="dashboard">
-      <h1>Application Dashboard</h1>
-      <div class="metrics">
-        <div class="metric">
-          <h2>Total Sessions</h2>
-          <p id="total-sessions">Loading...</p>
+    <div class="container mt-4">
+      <h1 class="text-center">Application Dashboard</h1>
+
+      <!-- Dashboard Metrics -->
+      <div class="row">
+        <div class="col-md-6">
+          <div class="card text-center p-4">
+            <h4>Total Sessions</h4>
+            <p id="total-sessions" class="fs-3 text-primary fw-bold">
+              Loading...
+            </p>
+          </div>
         </div>
-        <div class="metric">
-          <h2>Total Users</h2>
-          <p id="total-users">Loading...</p>
+        <div class="col-md-6">
+          <div class="card text-center p-4">
+            <h4>Total Users</h4>
+            <p id="total-users" class="fs-3 text-success fw-bold">Loading...</p>
+          </div>
         </div>
       </div>
+
+      <!-- Search Sessions -->
+      <h3 class="mt-5">Sessions List</h3>
+      <div class="input-group mb-3">
+        <input
+          type="text"
+          id="search-query"
+          class="form-control"
+          placeholder="Search by question"
+        />
+        <button id="apply-session-filters" class="btn btn-primary">
+          Search
+        </button>
+      </div>
+
+      <!-- Sessions Table -->
+      <table class="table table-bordered">
+        <thead class="table-dark">
+          <tr>
+            <th>Session ID</th>
+            <th>Number of Questions</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="session-list">
+          <!-- Sessions will be dynamically inserted here -->
+        </tbody>
+      </table>
+
+      <div id="pagination-controls" class="mt-3"></div>
     </div>
-    <!-- Sessions Modal -->
-<div id="session-modal" class="modal">
-  <div class="modal-content">
-      <span id="close-session-modal" class="close">&times;</span>
-      <h2>All Sessions</h2>
 
-      <div>
-          <input type="text" id="search-query" placeholder="Search by question">
-          <button id="apply-session-filters">Search</button>
-      </div>
-
-      <ul id="session-list"></ul>
-      <div id="pagination-controls"></div>
-  </div>
-</div>
-  
-  <div id="details-modal" class="modal">
-      <div class="modal-content">
-          <span id="close-details-modal" class="close">&times;</span>
-          <h2>Session Details</h2>
-          <table>
+    <!-- Session Details Modal -->
+    <div class="modal fade" id="sessionModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Session Questions</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <table class="table">
               <thead>
-                  <tr>
-                      <th>Question</th>
-                      <th>Answer</th>
-                      <th>Timestamp</th>
-                  </tr>
-              </thead>
-              <tbody id="details-list"></tbody>
-          </table>
-      </div>
-  </div>
-    <!-- Modal for Viewing Session Details -->
-<div id="session-details-modal" class="modal">
-  <div class="modal-content">
-      <span class="close" id="close-modal">&times;</span>
-      <h3>Session Details</h3>
-
-      <!-- Filters -->
-      <div>
-          <label for="filter-start-date">Start Date:</label>
-          <input type="date" id="filter-start-date">
-
-          <label for="filter-end-date">End Date:</label>
-          <input type="date" id="filter-end-date">
-
-          <label for="filter-user-id">User ID:</label>
-          <input type="text" id="filter-user-id">
-
-          <label for="search-query">Search:</label>
-          <input type="text" id="search-query">
-
-          <button id="apply-filters">Apply Filters</button>
-      </div>
-
-      <!-- Table for Session Details -->
-      <table>
-          <thead>
-              <tr>
+                <tr>
                   <th>Question</th>
                   <th>Answer</th>
                   <th>Date</th>
-              </tr>
-          </thead>
-          <tbody id="details-table-body">
-              <!-- Data will be dynamically injected -->
-          </tbody>
-      </table>
-
-      <!-- Pagination Controls -->
-      <div id="pagination-controls">
-          <!-- Pagination buttons will be dynamically created -->
+                </tr>
+              </thead>
+              <tbody id="modal-session-details">
+                <!-- Data will be dynamically injected -->
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
-  </div>
-</div>
-  </div>
-    <!-- Include dashboard.js -->
-    <script src="{{ url_for('static', filename='js/dashboard.js') }}" defer></script>
+    </div>
+
+    <!-- Modal for Viewing Session Details -->
+    <div id="details-modal" class="modal">
+      <div class="modal-content">
+        <span id="close-details-modal" class="close">&times;</span>
+        <h2>Session Details</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Question</th>
+              <th>Answer</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody id="details-list">
+            <!-- Data will be dynamically injected -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Bootstrap JS + Dashboard JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script
+      src="{{ url_for('static', filename='js/dashboard.js') }}"
+      defer
+    ></script>
   </body>
 </html>

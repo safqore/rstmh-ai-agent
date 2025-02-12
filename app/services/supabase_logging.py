@@ -252,6 +252,8 @@ class SupabaseLogger:
                 "search_query": search_query
             }).execute()
 
+            print(f"[DEBUG] Supabase response: {response}")  # Debugging output
+
             if response.error:
                 raise Exception(f"Supabase RPC call failed: {response.error}")
 
@@ -261,7 +263,7 @@ class SupabaseLogger:
 
     def get_sessions_with_filters(self, search_query="", limit=10, offset=0):
         """
-        Fetch sessions with optional filters and pagination.
+        Fetch sessions with optional filters and pagination using Supabase RPC function.
 
         :param search_query: Search term to filter by question content
         :param limit: Number of sessions to fetch (default: 10)
@@ -269,26 +271,23 @@ class SupabaseLogger:
         :return: A tuple (sessions, total_count)
         """
         try:
-            query = (
-                self.client.table("interactions")
-                .select("session_id, count(id) as question_count")
-                .group_by("session_id")
-            )
+            print("[DEBUG] Fetching sessions with filters from Supabase...")
 
-            # Apply search filter
-            if search_query:
-                query = query.ilike("prompt", f"%{search_query}%")
+            response = self.client.rpc("get_session_summary", {
+                "limit_param": limit,
+                "offset_param": offset,
+                "search_query": search_query
+            }).execute()
 
-            # Add pagination
-            query = query.range(offset, offset + limit - 1)
+            print(f"[DEBUG] Supabase response: {response}")  # Debugging output
 
-            response = query.execute()
-
-            if response.error:
-                raise Exception(f"Supabase query failed: {response.error}")
+            if hasattr(response, "error") and response.error:
+                raise Exception(f"Supabase RPC call failed: {response.error}")
 
             sessions = response.data
             total_count = len(sessions)  # Replace with actual count if available
+
+            print(f"[DEBUG] Retrieved {total_count} sessions.")
             return sessions, total_count
         except Exception as e:
-            raise Exception(f"Failed to fetch sessions: {str(e)}")     
+            raise Exception(f"Failed to fetch sessions: {str(e)}")
