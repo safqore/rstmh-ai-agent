@@ -4,7 +4,7 @@ import os
 
 def create_app():
     # Create the Flask app
-    app = Flask(__name__, static_folder="../static", template_folder="../frontend")
+    app = Flask(__name__, static_folder="../app/static", template_folder="../app/templates")
     app.config["ENV"] = os.getenv("FLASK_ENV", "production")  # Defaults to 'production'
 
     # Enable CORS
@@ -13,8 +13,10 @@ def create_app():
     # Register Blueprints
     from app.routes.query import query_bp
     from app.routes.static_files import static_bp
+    from app.routes.dashboard import dashboard_bp
 
     app.register_blueprint(query_bp)
     app.register_blueprint(static_bp)
+    app.register_blueprint(dashboard_bp, url_prefix="/dashboard")
 
     return app
