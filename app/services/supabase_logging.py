@@ -81,14 +81,14 @@ class SupabaseLogger:
 
                     # Handle timestamp inconsistencies
                     try:
-                        last_active = datetime.strptime(session["last_active"], "%Y-%m-%dT%H:%M:%S.%f")
+                        last_active = datetime.fromisoformat(session["last_active"])
                     except ValueError:
-                        last_active = datetime.strptime(session["last_active"] + "0", "%Y-%m-%dT%H:%M:%S.%f")
+                        last_active = datetime.strptime(session["last_active"], "%Y-%m-%dT%H:%M:%S.%f%z")
 
                     print("[DEBUG] Last active timestamp:", last_active)
 
                     # If the session is older than 6 hours, create a new session
-                    if current_time.replace(tzinfo=None) - created_at > timedelta(hours=6):
+                    if current_time - created_at > timedelta(hours=6):
                         print("[DEBUG] Session older than 6 hours. Creating new session.")
                         session_id = str(uuid.uuid4())
                         self._create_session(session_id, user_id, current_time)
