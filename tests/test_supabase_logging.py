@@ -1,5 +1,5 @@
 from app.services.supabase_logging import SupabaseLogger
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, ANY
 from unittest.mock import MagicMock
 import pytest
@@ -11,7 +11,7 @@ def test_reuse_active_session(mock_supabase):
     # Mock active session data
     active_time = (datetime.now(timezone.utc) - timedelta(minutes=10)).isoformat()
     mock_response = MagicMock()
-    mock_response.data = [{"session_id": "active-session", "last_active": active_time}]
+    mock_response.data = [{"session_id": "active-session", "last_active": active_time, "created_at": active_time}]
     mock_supabase.table.return_value.select.return_value.eq.return_value.execute.return_value = mock_response
 
     # Mock update response
@@ -36,8 +36,8 @@ def test_create_new_session_when_inactive(mock_supabase):
     # Mock SupabaseLogger instance
     logger = SupabaseLogger(supabase_client=mock_supabase)
 
-    # Mock inactive session data (last active > 15 minutes ago)
-    inactive_time = (datetime.now(timezone.utc) - timedelta(minutes=20)).isoformat()
+    # Mock inactive session data (last active > 6 hours ago)
+    inactive_time = (datetime.now(timezone.utc) - timedelta(hours=6, minutes=1)).isoformat()
     mock_supabase.table.return_value.select.return_value.eq.return_value.execute.return_value = {
         "data": [{"session_id": "inactive-session", "last_active": inactive_time}]
     }

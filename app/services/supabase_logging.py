@@ -1,6 +1,6 @@
 import os
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from supabase import create_client, Client
 from dotenv import load_dotenv
 
@@ -67,26 +67,29 @@ class SupabaseLogger:
         """
         current_time = datetime.now(timezone.utc)
         print("[DEBUG] Current time:", current_time)
-
+    
         if session_id:
             # Check if the session exists
             result = self.supabase.table("sessions").select("*").eq("session_id", session_id).execute()
             print("[DEBUG] Retrieved session data:", result.data)
-
+    
             if result.data:
                 session = result.data[0]
                 try:
+                    created_at = datetime.fromisoformat(session["created_at"])
+                    print("[DEBUG] Session created_at timestamp:", created_at)
+
                     # Handle timestamp inconsistencies
                     try:
-                        last_active = datetime.strptime(session["last_active"], "%Y-%m-%dT%H:%M:%S.%f")
+                        last_active = datetime.fromisoformat(session["last_active"])
                     except ValueError:
-                        last_active = datetime.strptime(session["last_active"] + "0", "%Y-%m-%dT%H:%M:%S.%f")
+                        last_active = datetime.strptime(session["last_active"], "%Y-%m-%dT%H:%M:%S.%f%z")
 
                     print("[DEBUG] Last active timestamp:", last_active)
 
-                    # If inactive for 15 minutes, create a new session
-                    if current_time.replace(tzinfo=None) - last_active > timedelta(minutes=15):
-                        print("[DEBUG] Session inactive for more than 15 minutes. Creating new session.")
+                    # If the session is older than 6 hours, create a new session
+                    if current_time - created_at > timedelta(hours=6):
+                        print("[DEBUG] Session older than 6 hours. Creating new session.")
                         session_id = str(uuid.uuid4())
                         self._create_session(session_id, user_id, current_time)
                     else:
@@ -97,7 +100,7 @@ class SupabaseLogger:
                         }).eq("session_id", session_id).execute()
                         print("[DEBUG] Updated last_active for session:", session_id)
                 except Exception as e:
-                    print(f"[ERROR] Error parsing last_active or updating session: {e}")
+                    print(f"[ERROR] Error parsing created_at or updating session: {e}")
                     raise
             else:
                 # If no session exists, create a new one
@@ -109,7 +112,7 @@ class SupabaseLogger:
             print("[DEBUG] No session_id provided. Creating new session.")
             session_id = str(uuid.uuid4())
             self._create_session(session_id, user_id, current_time)
-
+    
         print(f"[DEBUG]: Returning session_id={session_id} for user_id={user_id}")
         return session_id
 
