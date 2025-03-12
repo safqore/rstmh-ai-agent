@@ -77,6 +77,8 @@ class SupabaseLogger:
                 session = result.data[0]
                 try:
                     created_at = datetime.fromisoformat(session["created_at"])
+                    if created_at.tzinfo is None:
+                        created_at = created_at.replace(tzinfo=timezone.utc)
                     print("[DEBUG] Session created_at timestamp:", created_at)
 
                     # Handle timestamp inconsistencies
@@ -85,6 +87,8 @@ class SupabaseLogger:
                     except ValueError:
                         last_active = datetime.strptime(session["last_active"], "%Y-%m-%dT%H:%M:%S.%f%z")
 
+                    if last_active.tzinfo is None:
+                        last_active = last_active.replace(tzinfo=timezone.utc)
                     print("[DEBUG] Last active timestamp:", last_active)
 
                     # If the session is older than 6 hours, create a new session
