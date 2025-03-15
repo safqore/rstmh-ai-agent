@@ -1,6 +1,7 @@
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
 from dotenv import load_dotenv
+import numpy as np
 import os
 
 # Get the directory of the current file
@@ -75,11 +76,12 @@ def print_collections():
         print("-" * 50)
 
 def recreate_qdrant_collection(vector_size, collection_name):
-    """Deletes and recreates a Qdrant collection."""
+    """Deletes and recreates a Qdrant collection with the correct vector size."""
     if client.collection_exists(collection_name=collection_name):
         print(f"[INFO] Deleting existing collection: {collection_name}...")
         client.delete_collection(collection_name=collection_name)
-    print(f"[INFO] Creating new collection: {collection_name}...")
+
+    print(f"[INFO] Creating new collection: {collection_name} with vector size {vector_size}...")
     client.create_collection(
         collection_name=collection_name,
         vectors_config=models.VectorParams(size=vector_size, distance=models.Distance.COSINE)
@@ -89,34 +91,48 @@ def upload_qa_to_qdrant(qa_pairs, pdf_id, collection_name, embedder):
     """Uploads question-answer pairs as vectors to a Qdrant collection."""
     questions = [q for q, _ in qa_pairs]
     embeddings = embedder.encode(questions)
-    recreate_qdrant_collection(len(embeddings[0]), collection_name)
+
+    # Ensure embeddings are properly formatted
+    embeddings = [embedding.tolist() for embedding in embeddings]
+
+    # Get the correct vector size dynamically
+    vector_size = len(embeddings[0])  
+    recreate_qdrant_collection(vector_size, collection_name)
+
     points = [
         models.PointStruct(
             id=idx,
-            vector=embedding.tolist(),
-            payload={
-                "pdf_id": pdf_id,
-                "question": question,
-                "answer": answer
-            }
+            vector=embedding,
+            payload={"pdf_id": pdf_id, "question": question, "answer": answer}
         )
         for idx, (embedding, (question, answer)) in enumerate(zip(embeddings, qa_pairs))
     ]
+
     client.upsert(collection_name=collection_name, points=points)
     print(f"[SUCCESS] Uploaded {len(points)} QA pairs to collection '{collection_name}'.")
 
 def upload_chunks_to_qdrant(chunks, pdf_id, collection_name, embedder):
     """Uploads text chunks as vectors to a Qdrant collection."""
     embeddings = embedder.encode(chunks)
+
+    # Ensure embeddings are always a list of lists
+    if isinstance(embeddings, np.ndarray):
+        embeddings = embeddings.tolist()  # Convert numpy array to list
+
+    # Ensure each embedding is a list (Qdrant requires this)
+    embeddings = [embedding if isinstance(embedding, list) else [embedding] for embedding in embeddings]
+
     recreate_qdrant_collection(len(embeddings[0]), collection_name)
+
     points = [
         models.PointStruct(
             id=idx,
-            vector=embedding.tolist(),
+            vector=embedding,
             payload={"text": chunk, "pdf_id": pdf_id}
         )
         for idx, (chunk, embedding) in enumerate(zip(chunks, embeddings))
     ]
+
     client.upsert(collection_name=collection_name, points=points)
     print(f"[SUCCESS] Uploaded {len(points)} text chunks to collection '{collection_name}'.")
 
@@ -152,7 +168,6 @@ def search_with_fallback(query_vector, faq_collection, details_collection, top_k
             query_vector=query_vector,
             limit=top_k
         )
-        print(f"[DEBUG] FAQ Results: {faq_results}")
 
         # Check if any FAQ result meets the threshold
         # if faq_results and any(result.score >= threshold for result in faq_results):
@@ -168,7 +183,6 @@ def search_with_fallback(query_vector, faq_collection, details_collection, top_k
             query_vector=query_vector,
             limit=top_k
         )
-        print(f"[DEBUG] Details Results: {details_results}")
 
         return details_results, details_collection
 
@@ -177,16 +191,23 @@ def search_with_fallback(query_vector, faq_collection, details_collection, top_k
         raise
 
 def delete_all_collections():
-    """Deletes all collections from Qdrant."""
+    """Deletes all collections from Qdrant and returns a JSON response."""
     try:
         collections = client.get_collections().collections
         if not collections:
-            print("[INFO] No collections found in Qdrant.")
-            return
+            print("[INFO] No collections found in Qdrant.")  # Debug log
+            return {"message": "No collections found in Qdrant."}, 200
+
+        deleted_collections = []
         for collection in collections:
             collection_name = collection.name
-            print(f"[INFO] Deleting collection: {collection_name}...")
+            print(f"[INFO] Deleting collection: {collection_name}...")  # Debug log
             client.delete_collection(collection_name=collection_name)
-            print(f"[SUCCESS] Deleted collection: {collection_name}")
+            deleted_collections.append(collection_name)
+
+        print(f"[SUCCESS] Deleted collections: {deleted_collections}")  # Debug log
+        return {"message": "Deleted collections successfully.", "deleted": deleted_collections}, 200
+
     except Exception as e:
-        print(f"[ERROR] Failed to delete collections: {str(e)}")
+        print(f"[ERROR] Failed to delete collections: {str(e)}")  # Debug log
+        return {"error": f"Failed to delete collections: {str(e)}"}, 500

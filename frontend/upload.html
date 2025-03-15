@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Upload PDF to Qdrant</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        margin: 50px;
+      }
+      input,
+      button {
+        margin: 10px;
+        padding: 10px;
+      }
+      #message {
+        margin-top: 20px;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Upload PDF to Qdrant</h2>
+    <form id="uploadForm" enctype="multipart/form-data">
+      <input type="file" id="fileInput" name="file" accept=".pdf" />
+      <input
+        type="text"
+        id="collectionName"
+        name="collection_name"
+        placeholder="Enter Collection Name"
+      />
+      <button type="submit">Upload</button>
+    </form>
+    <p id="message"></p>
+
+    <script>
+      document.getElementById("uploadForm").onsubmit = async function (event) {
+        event.preventDefault(); // Prevent default form submission
+
+        const fileInput = document.getElementById("fileInput");
+        const collectionName = document.getElementById("collectionName").value;
+        const message = document.getElementById("message");
+
+        if (!fileInput.files.length) {
+          message.innerText = "❌ Please select a PDF file.";
+          return;
+        }
+        if (!collectionName) {
+          message.innerText = "❌ Please enter a collection name.";
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+        formData.append("collection_name", collectionName);
+
+        message.innerText = "⏳ Uploading...";
+
+        try {
+          const response = await fetch("/upload-pdf", {
+            method: "POST",
+            body: formData,
+          });
+
+          const result = await response.json();
+          if (response.ok) {
+            message.innerText = `✅ Success! PDF uploaded. ID: ${result.pdf_id}`;
+          } else {
+            message.innerText = `❌ Error: ${result.error}`;
+          }
+        } catch (error) {
+          message.innerText = "❌ Failed to upload PDF.";
+        }
+      };
+    </script>
+  </body>
+</html>

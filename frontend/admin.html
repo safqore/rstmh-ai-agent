@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Panel - Delete Qdrant Collections</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        margin: 50px;
+      }
+      input,
+      button {
+        margin: 10px;
+        padding: 10px;
+      }
+      #message {
+        margin-top: 20px;
+        font-weight: bold;
+        color: red;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Admin Panel - Delete All Qdrant Collections</h2>
+    <input type="text" id="username" placeholder="Enter Admin Username" />
+    <input type="password" id="password" placeholder="Enter Admin Password" />
+    <button onclick="deleteCollections()">Delete All Collections</button>
+    <p id="message"></p>
+
+    <script>
+      async function deleteCollections() {
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+        const message = document.getElementById("message");
+
+        if (!username || !password) {
+          message.innerText = "❌ Please enter admin credentials.";
+          return;
+        }
+
+        message.innerText = "⏳ Deleting collections...";
+
+        try {
+          const response = await fetch("/admin/delete-all-collections", {
+            method: "DELETE",
+            headers: {
+              Authorization: "Basic " + btoa(username + ":" + password),
+            },
+          });
+
+          const result = await response.json();
+          if (response.ok) {
+            message.innerText = `✅ Success! ${result.message}`;
+            message.style.color = "green";
+          } else {
+            message.innerText = `❌ Error: ${result.error}`;
+          }
+        } catch (error) {
+          message.innerText = `❌ Failed to delete collections. and the error = ${error}`;
+        }
+      }
+    </script>
+  </body>
+</html>
