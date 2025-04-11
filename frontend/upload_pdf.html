@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Upload PDF to Qdrant</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        padding: 20px;
+        background-color: #f4f4f4;
+      }
+      .container {
+        max-width: 600px;
+        margin: auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #333;
+        text-align: center;
+      }
+      .upload-box {
+        border: 2px dashed #007bff;
+        padding: 20px;
+        text-align: center;
+        border-radius: 5px;
+        background: #f8f9fa;
+      }
+      input[type="file"] {
+        margin-top: 10px;
+      }
+      .btn-container {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 10px;
+      }
+      button {
+        padding: 10px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+      }
+      .btn-upload-qa {
+        background: #007bff;
+        color: white;
+      }
+      .btn-upload-text {
+        background: #28a745;
+        color: white;
+      }
+      .btn-upload-qa:hover {
+        background: #0056b3;
+      }
+      .btn-upload-text:hover {
+        background: #218838;
+      }
+      .status-success {
+        color: green;
+        font-weight: bold;
+      }
+      .status-error {
+        color: red;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Upload PDF to Qdrant</h1>
+      <div class="upload-box">
+        <input type="file" id="pdfFile" accept="application/pdf" />
+        <div class="btn-container">
+          <button class="btn-upload-qa" onclick="uploadPDF('qa')">
+            Upload as Q&A
+          </button>
+          <button class="btn-upload-text" onclick="uploadPDF('text')">
+            Upload as Text
+          </button>
+        </div>
+      </div>
+      <p id="status"></p>
+    </div>
+
+    <script>
+      async function uploadPDF(type) {
+        const fileInput = document.getElementById("pdfFile");
+        const status = document.getElementById("status");
+        if (!fileInput.files.length) {
+          status.innerText = "Please select a file.";
+          status.className = "status-error";
+          return;
+        }
+
+        let formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+
+        let endpoint =
+          type === "qa" ? "/qdrant-pdf/upload/qa" : "/qdrant-pdf/upload/text";
+
+        try {
+          let response = await fetch(endpoint, {
+            method: "POST",
+            body: formData,
+          });
+          let data = await response.json();
+          status.innerText = data.message || "Upload successful!";
+          status.className = "status-success";
+        } catch (error) {
+          status.innerText = "Error uploading file.";
+          status.className = "status-error";
+        }
+      }
+    </script>
+  </body>
+</html>

@@ -13,8 +13,10 @@ def create_app():
     # Register Blueprints
     from app.routes.query import query_bp
     from app.routes.static_files import static_bp
+    from app.routes.qdrant_routes import qdrant_bp
 
     app.register_blueprint(query_bp)
     app.register_blueprint(static_bp)
+    app.register_blueprint(qdrant_bp)
 
     return app
