@@ -4,6 +4,7 @@ import os
 from app.services.pdf_service import extract_qa_from_pdf, chunk_text, extract_text_from_pdf
 from app.services.qdrant_service import upload_qa_to_qdrant, upload_chunks_to_qdrant
 from app.services.embedding_service import embedder  # Ensure this exists and provides embeddings
+from app.scripts.ingest_manual import insert_manual_override
 from dotenv import load_dotenv
 
 qdrant_bp = Blueprint('qdrant_pdf', __name__, url_prefix='/qdrant-pdf')
@@ -63,3 +64,8 @@ def upload_text_pdf():
     upload_chunks_to_qdrant(text_chunks, pdf_id, collection_name, embedder)
     
     return jsonify({"message": f"Raw text from '{filename}' processed and uploaded to Qdrant collection '{collection_name}'."})
+
+@qdrant_bp.post("/seed/manual-override")
+def seed_manual_override():
+    insert_manual_override(collection_name=request.form.get('collection_name', os.getenv('DETAILS_COLLECTION')) )
+    return {"status": "done"}
