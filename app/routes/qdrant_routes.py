@@ -64,11 +64,8 @@ def upload_text_pdf():
     upload_chunks_to_qdrant(text_chunks, pdf_id, collection_name, embedder)
     
     return jsonify({"message": f"Raw text from '{filename}' processed and uploaded to Qdrant collection '{collection_name}'."})
-<<<<<<< HEAD
 
 @qdrant_bp.post("/seed/manual-override")
 def seed_manual_override():
     insert_manual_override(collection_name=request.form.get('collection_name', os.getenv('DETAILS_COLLECTION')) )
     return {"status": "done"}
-=======
->>>>>>> origin/main
