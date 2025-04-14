@@ -31,6 +31,7 @@ class SupabaseLogger:
     def log_interaction(self, user_id, session_id, prompt, response, source_pdf=None, section_reference=None, metadata=None):
         """
         Logs chatbot interaction to the Supabase database.
+        Adds question/answer timestamps and response latency.
         """
         if not user_id or not isinstance(user_id, str) or user_id.strip() == "":
             raise ValueError("Invalid user_id provided")
@@ -41,25 +42,41 @@ class SupabaseLogger:
         session_check = self.supabase.table("sessions").select("*").eq("session_id", session_id).execute()
         if not session_check.data:
             raise ValueError(f"Session ID {session_id} does not exist in the sessions table.")
-    
+
+        # Capture timestamps
+        question_asked_at = datetime.now(timezone.utc)
+        
+        # Assume response was generated here (in real use, record before and after generation)
+        bot_answered_at = datetime.now(timezone.utc)
+        response_latency = bot_answered_at - question_asked_at
+
+        # Main payload
         data = {
             "user_id": user_id,
             "session_id": session_id,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": bot_answered_at.isoformat(timespec="microseconds"),
             "prompt": prompt,
             "response": response,
             "source_pdf": source_pdf,
             "section_reference": section_reference,
             "metadata": metadata,
-            "is_compliant": True  # Default value for compliance flag
+            "is_compliant": True
         }
+
+        # Optional new fields (won’t break existing functionality if columns are present)
+        try:
+            data["question_asked_at"] = question_asked_at.isoformat(timespec="microseconds")
+            data["bot_answered_at"] = bot_answered_at.isoformat(timespec="microseconds")
+            data["response_latency"] = str(response_latency)
+        except Exception as e:
+            print(f"[WARN] Failed to attach extra timing fields: {e}")
 
         try:
             result = self.supabase.table("interactions").insert(data).execute()
             print("[DEBUG] Logged interaction successfully:", result.data)
         except Exception as e:
             print(f"[ERROR] Error logging interaction to Supabase: {e}")
-            raise # Re-raise the exception
+            raise
 
     def get_or_create_session(self, user_id, session_id=None):
         """
