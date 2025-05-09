@@ -1,7 +1,6 @@
 from openai import OpenAI
 import os
 from dotenv import load_dotenv
-import os
 
 # Get the directory of the current file
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -10,11 +9,33 @@ env_path = os.path.join(current_dir, '../..', '.env')
 # Load the environment variables
 load_dotenv(dotenv_path=env_path)
 
+# Initialize OpenAI client
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+# Keywords that trigger blocking
+BLOCKED_KEYWORDS = [
+    "write", "draft", "generate", "fill", "complete", "sample", "example", "template",
+    "researcher profile", "project summary", "personal statement", "motivation statement",
+    "answer this question", "craft", "response to", "section"
+]
+
+def should_block_query(query: str) -> bool:
+    lowered = query.lower()
+    return any(kw in lowered for kw in BLOCKED_KEYWORDS)
+
 def get_llm_response(query, context, chat_history):
-    print(f"[DEBUG] Context for LLM: {context[:200]}...")
-    
+    print(f"[DEBUG] Context for LLM: {context[:200]}...")  # Truncate long context
+
+    # Block application-writing type queries
+    if should_block_query(query):
+        blocked_reply = (
+            "I'm sorry, but I can't help write or generate any parts of your application. "
+            "You should complete these sections yourself to ensure they reflect your own experience and ideas."
+        )
+        print(f"[DEBUG] Blocked Query: {query}")
+        return blocked_reply
+
+    # Safe prompt with instruction-based safeguards
     prompt = (
         f"You are a knowledgeable and helpful assistant focused on the RSTMH Early Career Grants Programme. "
         f"Use the provided context and chat history to answer questions as accurately as possible. "
@@ -23,6 +44,8 @@ def get_llm_response(query, context, chat_history):
         f"'I'm sorry, but I can only provide information related to the RSTMH Early Career Grants Programme or grants in general. If you have any questions about funding opportunities or research, feel free to ask!'\n"
         f"If the user asks a question that contains non-English words, respond with: "
         f"'I'm sorry, but I can only understand and respond in English. Please ask your question in English.'\n"
+        f"If the user asks you to write or generate parts of their application (e.g., research proposal, researcher profile, project summary, or responses to application questions), respond with: "
+        f"'I'm sorry, but I can't help write or generate any parts of your application. You should complete these sections yourself to ensure they reflect your own experience and ideas.'\n"
         f"Chat History:\n{chat_history}\n"
         f"Context:\n{context}\n"
         f"Question: {query}\n"
@@ -34,6 +57,7 @@ def get_llm_response(query, context, chat_history):
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}]
     )
+
     llm_reply = response.choices[0].message.content.strip()
     print(f"[DEBUG] LLM Reply: {llm_reply}")
 
