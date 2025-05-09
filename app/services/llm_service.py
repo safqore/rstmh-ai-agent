@@ -12,28 +12,8 @@ load_dotenv(dotenv_path=env_path)
 # Initialize OpenAI client
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Keywords that trigger blocking
-BLOCKED_KEYWORDS = [
-    "write", "draft", "generate", "fill", "complete", "sample", "example", "template",
-    "researcher profile", "project summary", "personal statement", "motivation statement",
-    "answer this question", "craft", "response to", "section"
-]
-
-def should_block_query(query: str) -> bool:
-    lowered = query.lower()
-    return any(kw in lowered for kw in BLOCKED_KEYWORDS)
-
 def get_llm_response(query, context, chat_history):
     print(f"[DEBUG] Context for LLM: {context[:200]}...")  # Truncate long context
-
-    # Block application-writing type queries
-    if should_block_query(query):
-        blocked_reply = (
-            "I'm sorry, but I can't help write or generate any parts of your application. "
-            "You should complete these sections yourself to ensure they reflect your own experience and ideas."
-        )
-        print(f"[DEBUG] Blocked Query: {query}")
-        return blocked_reply
 
     # Safe prompt with instruction-based safeguards
     prompt = (
