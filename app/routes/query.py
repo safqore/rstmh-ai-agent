@@ -1,30 +1,9 @@
-from flask import Blueprint, request, jsonify, current_app
-from app.services.qdrant_service import search_with_fallback
-from app.services.embedding_service import generate_embedding
-from app.services.supabase_logging import SupabaseLogger
-from app.services.llm_service import get_llm_response
-from app.services.toxicity_checker_service import ToxicityChecker
-from dotenv import load_dotenv
-from flask import Blueprint, render_template, current_app
+from flask import Blueprint, request, jsonify, render_template, current_app
 import uuid
 import os
 
-# os.environ.clear
-# Load environment variables
-load_dotenv()
-
 query_bp = Blueprint('query', __name__)
 
-# Initialize Supabase logger
-logger = SupabaseLogger()
-
-# Initialize a dictionary to store chat history for each session
-chat_histories = {}
-
-FAQ_COLLECTION = "faq_vectors"
-DETAILS_COLLECTION = "details_vectors"
-
-# Load environment variables
 PORT = os.getenv('PORT', 5000)
 
 def get_base_urls():
@@ -45,7 +24,6 @@ def get_base_urls():
 def index():
     # Call the utility function to get the URLs
     script_base_url, base_url = get_base_urls()
-    print(f"[DEBUG]: script_base_url: {script_base_url}\nbase_url: {base_url}")
     return render_template("index.html", script_base_url=script_base_url, base_url=base_url)
 
 @query_bp.route("/debug")
@@ -60,104 +38,23 @@ def debug():
 
 @query_bp.route("/query", methods=["POST"])
 def query_handler():
-    try:
-        # Retrieve user ID and session ID from headers or generate new ones
-        user_id = request.headers.get("X-User-ID")
-        if user_id in [None, 'null']:
-            user_id = str(uuid.uuid4())
-
-        session_id = request.headers.get("X-Session-ID")
-        if session_id in [None, 'null']:
-            session_id = str(uuid.uuid4())
-
-        print(f"[DEBUG]: user_id: {user_id} \n session_id: {session_id}")
-
-        # Retrieve or initialize chat history for the session
-        chat_history = chat_histories.get(session_id, "")
-
-        # Extract user query from the JSON payload
-        data = request.json
-        if not data or "user_query" not in data:
-            return jsonify({"error": "Invalid or missing JSON payload."}), 400
-
-        user_query = data.get("user_query", "").strip()
-        if not user_query.strip():
-            return jsonify({"error": "Query cannot be empty.", "error_code": "EMPTY_QUERY"}), 400
-        
-        # Check for toxic content
-        is_toxic, categories = ToxicityChecker.check_toxicity(user_query)
-        if is_toxic:
-            print(f"[DEBUG] Query flagged as toxic: {categories}")
-            return jsonify({"answer": "Your query contains inappropriate content and cannot be processed."})
-
-        # Generate embedding (vector) for the query
-        query_vector = generate_embedding(user_query)
-
-        # Perform search with fallback
-        search_results, source_collection = search_with_fallback(
-            query_vector, FAQ_COLLECTION, DETAILS_COLLECTION
-        )
-
-        # If no results found
-        if not search_results:
-            return jsonify({"error": "No relevant information found."}), 404
-
-        # Format the results
-        relevant_chunks = []
-        for result in search_results:
-            if source_collection == FAQ_COLLECTION:
-                question = result.payload.get("question", "No question found")
-                answer = result.payload.get("answer", "No answer found")
-                score = result.score
-                print("[DEBUG] FAQ question: ", question, "\nFAQ Answer: ", answer)
-                relevant_chunks.append(f"Question: {question}\nAnswer: {answer}\nScore: {score}")
-            elif source_collection == DETAILS_COLLECTION:
-                text = result.payload.get("text", "No text found")
-                print("[DEBUG] Details Results:", text)
-                score = result.score
-                relevant_chunks.append(f"Text: {text}\nScore: {score}")
-
-        # Combine the chunks for context
-        context = "\n\n".join(relevant_chunks)
-
-        # Get LLM response with chat history
-        llm_reply = get_llm_response(query=user_query, context=context, chat_history=chat_history)
-
-        # Update chat history
-        chat_history += f"User: {user_query}\nAssistant: {llm_reply}\n"
-        chat_histories[session_id] = chat_history
-
-        # Ensure session exists
-        session_id=logger.get_or_create_session(user_id=user_id, session_id=session_id)
-
-        # Log the interaction
-        logger.log_interaction(
-            user_id=user_id,
-            session_id=session_id,
-            prompt=user_query,
-            response=llm_reply,
-            source_pdf=source_collection,
-            metadata={
-                "ip": request.remote_addr,
-                "user_agent": request.headers.get("User-Agent")
-            }
-        )
-
-        # check llm reply for toxicity
-        is_toxic, categories = ToxicityChecker.check_toxicity(llm_reply)
-        if is_toxic:
-            print(f"[DEBUG] Response flagged as toxic: {categories}")
-            llm_reply = "The generated response was flagged as inappropriate. Please try again."
-
-        return jsonify({
-            "user_id": user_id,
-            "session_id": session_id,
-            "query": user_query,
-            "answer": llm_reply,
-            "context": relevant_chunks,
-            "source": source_collection
-        })
-
-    except Exception as e:
-        current_app.logger.error("Error during query processing: %s", str(e), exc_info=True)
-        return jsonify({"error": f"Internal server error: {str(e)}"}), 500
+    print("[QUERY] Received request: headers=", dict(request.headers))
+    print("[QUERY] Raw body:", request.get_data(as_text=True))
+    user_id = request.headers.get("X-User-ID")
+    if user_id in [None, 'null']:
+        user_id = str(uuid.uuid4())
+    session_id = request.headers.get("X-Session-ID")
+    if session_id in [None, 'null']:
+        session_id = str(uuid.uuid4())
+    data = request.json or {}
+    user_query = data.get("user_query", "").strip()
+    response = {
+        "user_id": user_id,
+        "session_id": session_id,
+        "query": user_query,
+        "answer": "Thank you for your interest. Applications for the 2025 RSTMH Early Career Grants Programme are now closed.",
+        "context": [],
+        "source": None
+    }
+    print("[QUERY] Sending response:", response)
+    return jsonify(response)
